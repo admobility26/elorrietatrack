@@ -1,0 +1,107 @@
+{
+  "name": "elorrieta-track",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "node scripts/sync-legal.mjs && vite build",
+    "preview": "vite preview",
+    "desktop:dev": "node scripts/electron-dev.cjs",
+    "icon:mac": "node scripts/make-icon.cjs",
+    "package:mac": "npm run icon:mac && npm run build && electron-builder --mac dmg --arm64 --publish never",
+    "prepare": "npm run build",
+    "package:win": "npm run build && electron-builder --win nsis --x64 --publish never",
+    "test": "node tests/board-model.mjs && node tests/edition.mjs && node tests/trajectory-edit.mjs && node tests/trajectory-board.mjs",
+    "test:recording": "node tests/trajectory-pause.mjs && node tests/board-recording.mjs",
+    "test:desktop": "node tests/desktop-edition.mjs"
+  },
+  "dependencies": {
+    "maplibre-gl": "^6.13.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3",
+    "vite": "^6.3.5"
+  },
+  "allowScripts": {
+    "electron@44.7.0": true
+  },
+  "build": {
+    "appId": "com.admobility.elorrietatrack",
+    "productName": "ElorrietaTrack",
+    "asar": true,
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.education",
+      "icon": "build/icon.icns",
+      "identity": null,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "ElorrietaTrack usa el micrófono si eliges grabar una explicación."
+      }
+    },
+    "dmg": {
+      "title": "ElorrietaTrack",
+      "artifactName": "ElorrietaTrack.dmg",
+      "contents": [
+        {
+          "x": 140,
+          "y": 170,
+          "type": "file"
+        },
+        {
+          "x": 420,
+          "y": 170,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "copyright": "Copyright © 2026 Aitor Delgado Martínez · AD Mobility",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "signExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "ElorrietaTrack-${version}-Windows-x64-Setup.${ext}",
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Aitor Delgado Martínez (AD Mobility)",
+  "description": "ElorrietaTrack: trayectorias y pizarra didáctica para formación vial"
+}

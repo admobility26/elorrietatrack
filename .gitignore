@@ -1,0 +1,24 @@
+node_modules/
+dist/
+release/
+build/*
+!build/icon.icns
+.env.local
+.DS_Store
+
+tests/*.png
+
+.wrangler/
+
+tests/*-final.mp4
+
+# Legal web copies generated from the root license during build
+/public/LICENSE.txt
+/public/THIRD-PARTY-NOTICES.txt
+/public/licencia.html
+
+!build/icon.ico
+
+node_modules
+.tmp/
+.dev.vars

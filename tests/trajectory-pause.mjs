@@ -1,0 +1,31 @@
+import {installMapFixtures} from './map-fixtures.mjs';
+import {chromium} from '@playwright/test';import assert from 'node:assert/strict';
+const browser=await chromium.launch();try{
+ const page=await browser.newPage();await page.addInitScript(()=>{
+  localStorage.setItem('elorrietatrack-language','es');localStorage.setItem('elorrietatrack-routes',JSON.stringify([{id:'pause-test',name:'Audio test',color:'#e36b4d',points:[[-2.93,43.26],[-2.90,43.28]],narration:''}]));
+  window.pointerFrames=0;const nativeFill=CanvasRenderingContext2D.prototype.fill;CanvasRenderingContext2D.prototype.fill=function(...args){if(this.fillStyle==='#164f43')window.pointerFrames++;return nativeFill.apply(this,args);};window.recordedSignalFrames=0;const fillText=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(text,...args){if(String(text).startsWith('R-2 ·'))window.recordedSignalFrames++;return fillText.call(this,text,...args);};
+  const NativeAudio=window.Audio;window.Audio=class extends NativeAudio{constructor(...args){super(...args);window.testAudio=this;}};
+  const NativeRecorder=window.MediaRecorder;window.MediaRecorder=class extends NativeRecorder{constructor(...args){super(...args);window.testRecorder=this;}};
+  window.showDirectoryPicker=async()=>{const root=await navigator.storage.getDirectory();return root.getDirectoryHandle('pause-test',{create:true});};
+ });await installMapFixtures(page);await page.goto('http://127.0.0.1:5174');await page.getByRole('button',{name:'Entrar en la aplicación'}).click();
+ assert.equal(await page.getByRole('button',{name:'Pausar imagen',exact:true}).isDisabled(),true);assert.equal(await page.getByRole('button',{name:'Reanudar recorrido',exact:true}).isDisabled(),true);
+ const wav=Buffer.alloc(44+44100*12*2);wav.write('RIFF');wav.writeUInt32LE(wav.length-8,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(44100,24);wav.writeUInt32LE(88200,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(wav.length-44,40);for(let n=0;n<44100*12;n++)wav.writeInt16LE(Math.round(Math.sin(n*440*2*Math.PI/44100)*16000),44+n*2);
+ await page.locator('.audio-file-input').first().setInputFiles({name:'voice.wav',mimeType:'audio/wav',buffer:wav});await page.locator('.folder-button').first().click();await page.getByRole('button',{name:'● Grabar vídeo',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.recording-pause-controls button').disabled);await page.waitForTimeout(500);await page.getByRole('button',{name:'Pausar imagen',exact:true}).click();
+ await page.locator('.video-card').first().screenshot({path:'../ElorrietaTrack-controles-pausa.png'});
+ const before=await page.evaluate(()=>({progress:document.querySelector('.timeline-fill').style.width,audio:window.testAudio.currentTime}));await page.waitForTimeout(1000);
+ const after=await page.evaluate(()=>({progress:document.querySelector('.timeline-fill').style.width,audio:window.testAudio.currentTime,paused:window.testAudio.paused,state:window.testRecorder.state,tracks:window.testRecorder.stream.getAudioTracks().map(t=>t.readyState)}));assert.equal(after.progress,before.progress);assert.ok(after.audio>before.audio+.7,JSON.stringify({before,after}));assert.equal(after.paused,false);assert.equal(after.state,'recording');assert.deepEqual(after.tracks,['live']);
+ const map=await page.locator('.map-canvas').boundingBox();
+ await page.mouse.move(map.x+map.width/2,map.y+map.height/2);
+ await page.waitForFunction(()=>window.pointerFrames>0);
+ await page.getByRole('button',{name:'Reanudar recorrido',exact:true}).hover();
+ const overButton=await page.evaluate(()=>window.pointerFrames);await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>window.pointerFrames),overButton);
+ await page.locator('.maplibregl-ctrl-zoom-in').hover(); // map navigation buttons are excluded too
+ const overControl=await page.evaluate(()=>window.pointerFrames);await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>window.pointerFrames),overControl);
+ await page.getByRole('button',{name:'Añadir punto conflictivo en pausa',exact:false}).click();
+ const dialog=page.locator('.marker-dialog');await dialog.getByLabel('Señal del catálogo',{exact:true}).selectOption('R-2');await dialog.getByLabel('Explicación para el alumnado').fill('Detenerse y comprobar ambos lados');await dialog.getByRole('button',{name:'Añadir en este punto',exact:true}).click();
+ const popup=page.getByRole('complementary',{name:'Punto conflictivo'});await popup.waitFor();assert.match(await popup.innerText(),/Detenerse/);const popupBox=await popup.boundingBox(),mapBox=await page.locator('.map-canvas').boundingBox();assert.ok(popupBox.x>mapBox.x+mapBox.width/2);assert.ok(popupBox.y<mapBox.y+80);assert.equal(await page.locator('.map-signal-card').count(),0);
+ await page.waitForFunction(()=>window.recordedSignalFrames>0);
+ const stillRecording=await page.evaluate(()=>({state:window.testRecorder.state,audio:window.testAudio.paused}));assert.deepEqual(stillRecording,{state:'recording',audio:false});
+ await page.getByRole('button',{name:'Reanudar recorrido',exact:true}).click();await page.mouse.move(map.x+map.width/2,map.y+map.height/2);await page.waitForTimeout(100);const resumedPointers=await page.evaluate(()=>window.pointerFrames);await page.waitForTimeout(600);assert.equal(await page.evaluate(()=>window.pointerFrames),resumedPointers);assert.notEqual(await page.locator('.timeline-fill').evaluate(e=>e.style.width),after.progress);await page.waitForTimeout(6500);await popup.waitFor({state:'hidden'});await page.getByRole('button',{name:'■ Finalizar y guardar',exact:true}).click();await page.getByText('Vídeo guardado en',{exact:false}).waitFor();
+ console.log('Real MP4 recording: paused route progression, continuous audio and recording stream, resume and file save PASS');
+}finally{await browser.close();}

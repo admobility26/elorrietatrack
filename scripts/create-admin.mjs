@@ -1,0 +1,4 @@
+import fs from 'node:fs/promises';import {passwordHash} from '../server/password.js';
+const email=process.env.ADMIN_EMAIL?.trim().toLowerCase(),password=process.env.ADMIN_PASSWORD;
+if(!email||!/^\S+@\S+\.\S+$/.test(email)||!password||password.length<8||password.length>128)throw Error('Define ADMIN_EMAIL y ADMIN_PASSWORD (8-128 caracteres) en un entorno privado.');
+const quote=s=>"'"+String(s).replace(/'/g,"''")+"'";await fs.mkdir('.tmp',{recursive:true,mode:0o700});await fs.writeFile('.tmp/admin.sql',`INSERT INTO users(id,email,password_hash,role,active,created_at) VALUES(${quote(crypto.randomUUID())},${quote(email)},${quote(await passwordHash(password))},'admin',1,${Date.now()});\n`,{mode:0o600});console.log('Administrador preparado en .tmp/admin.sql. Importa el archivo en la base NUEVA y elimínalo después.');

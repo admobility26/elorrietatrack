@@ -1,0 +1,2 @@
+*.pdf binary
+public/vendor/pdf-lib.min.js -diff
