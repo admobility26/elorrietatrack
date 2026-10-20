@@ -1963,7 +1963,7 @@ export default function App() {
       setBoardSeed(null);
     }} />}
     <LegacyImport /><header className="topbar">
-      <div className="brand"><div className="brand-mark"><span /><span /><span /></div><div><div className="brand-name">ELORRIETA<span> / TRACK</span></div><div className="brand-subtitle">Trayectorias y pizarra didáctica</div></div></div>
+      <div className="brand"><img className="institution-logo" src="./elorrieta-logo.jpg" alt="Elorrieta-Erreka Mari" /><div><div className="brand-name">ElorrietaTrack</div><div className="brand-subtitle">Trayectorias y pizarra didáctica</div></div></div>
       <div className="topbar-right"><AutosaveStatus language={language} /><AccountControls language={language} disabled={recording || false} /><button className="library-launch" disabled={recording || false} onClick={showLibrary}>▤ {t("Liburutegia", "Biblioteca")}</button><span className="map-status"><i className={mapReady && !mapError ? 'status-dot ready' : 'status-dot'} />{rasterLabel(mapProvider)}</span><button className="icon-button" title="Centrar en Bizkaia" onClick={() => mapRef.current?.flyTo({
           center: START,
           zoom: 10.1,
