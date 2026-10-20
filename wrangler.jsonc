@@ -1,7 +1,20 @@
 {
   "name": "elorrietatrack",
   "compatibility_date": "2026-10-20",
-  "assets": {"directory": "./dist", "binding": "ASSETS", "run_worker_first": true},
-  "build": {"command": "npm run build"},
-  "main": "server/worker.js"
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "build": {
+    "command": "npm run build"
+  },
+  "main": "server/worker.js",
+  "d1_databases": [
+    {
+      "binding": "AUTH",
+      "database_name": "elorrietatrack-auth",
+      "database_id": "4505069d-1732-4738-bd05-a0b2c7af8903"
+    }
+  ]
 }
