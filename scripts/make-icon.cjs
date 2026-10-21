@@ -7,7 +7,7 @@ const resources = path.join(root, 'build');
 const iconset = path.join(resources, 'icon.iconset');
 const source = path.join(resources, 'app-icon.png');
 fs.mkdirSync(iconset, { recursive: true });
-execFileSync('swift', [path.join(__dirname, 'make-icon.swift'), path.join(root,'public','elorrieta-logo.jpg'), source], { stdio: 'inherit' });
+execFileSync('swift', [path.join(__dirname, 'make-icon.swift'), path.join(root,'public','elorrieta-logo.svg'), source], { stdio: 'inherit' });
 
 for (const [name, pixels] of [
   ['icon_16x16.png', 16], ['icon_16x16@2x.png', 32],

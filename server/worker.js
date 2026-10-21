@@ -90,7 +90,7 @@ export default {async fetch(request,env){
   const url=new URL(request.url),path=url.pathname;
   if(path.startsWith('/api/'))return await api(request,env,path);
   // The entry and login assets are public; application code require a session.
-  const publicPath=['/','/index.html','/sw.js','/account-storage.js','/licencia.html','/licencia','/LICENSE.txt','/THIRD-PARTY-NOTICES.txt'].includes(path)||loginAssets.has(path)||['/ad-mobility-logo.png','/elorrieta-logo.jpg','/favicon.png'].includes(path);
+  const publicPath=['/','/index.html','/sw.js','/account-storage.js','/licencia.html','/licencia','/LICENSE.txt','/THIRD-PARTY-NOTICES.txt'].includes(path)||loginAssets.has(path)||['/ad-mobility-logo.png','/elorrieta-logo.svg','/favicon.png'].includes(path);
   const u=publicPath?null:await identity(request,env);
   if(!publicPath&&!u)return new Response('Inicia sesión en ElorrietaTrack.',{status:401,headers:{'Cache-Control':'no-store'}});
   let response=await env.ASSETS.fetch(request);

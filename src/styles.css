@@ -69,3 +69,5 @@
 .map-provider-help{display:block;font-size:11px;line-height:1.5;color:#52685b;margin:10px 0}.map-provider-help a{text-decoration:underline}.map-provider-options button{font-size:12px;min-height:64px}.map-provider-options small{font-size:10px}
 
 .institution-logo{width:52px;height:52px;object-fit:contain;flex:none;background:white;border-radius:7px}.brand-name{letter-spacing:0;text-transform:none}.library-institution-brand,.backup-institution-brand{display:flex;align-items:center;gap:10px}.library-institution-brand img,.backup-institution-brand img{width:54px;height:54px;object-fit:contain;background:white;border-radius:6px}.library-institution-brand{font-size:23px!important;flex-wrap:wrap}
+
+.institution-logo{width:125px;height:44px}.library-institution-brand img,.backup-institution-brand img{width:140px;height:44px}
