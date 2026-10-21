@@ -1,6 +1,6 @@
 {
   "name": "elorrieta-track",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
@@ -15,7 +15,8 @@
     "package:win": "npm run build && electron-builder --win nsis --x64 --publish never",
     "test": "node tests/board-model.mjs && node tests/edition.mjs && node tests/trajectory-edit.mjs && node tests/trajectory-board.mjs",
     "test:recording": "node tests/trajectory-pause.mjs && node tests/board-recording.mjs",
-    "test:desktop": "node tests/desktop-edition.mjs"
+    "test:desktop": "node tests/desktop-edition.mjs",
+    "test:licensing": "node tests/licensing.mjs"
   },
   "dependencies": {
     "maplibre-gl": "^6.13.0",

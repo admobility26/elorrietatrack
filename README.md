@@ -31,9 +31,13 @@ npm run build
 npm run package:win
 ```
 
-Windows: `release/ElorrietaTrack-1.0.1-Windows-x64-Setup.exe`. El EXE no está firmado; hay que probarlo en los equipos del centro antes de entregarlo. No se promete compatibilidad con cualquier versión antigua de Windows.
+Windows: `release/ElorrietaTrack-1.1.0-Windows-x64-Setup.exe`. El EXE no está firmado; hay que probarlo en los equipos del centro antes de entregarlo. No se promete compatibilidad con cualquier versión antigua de Windows.
 
 Vite es para pruebas locales sin identificación. La web de producción conserva administración propia y requiere una base D1 nueva y su administrador antes de publicarse: [configuración](server/README.md). No contiene contraseñas reales ni identificadores de la base de RutasAD.
+
+## Licencias de escritorio
+
+Windows y Mac requieren una clave de un solo uso vinculada al equipo, con caducidad y hasta 30 días sin conexión. Crear, renovar y bloquear desde la Administración web: [guía de licencias](LICENSES-GUIA.md). El DMG Apple Silicon se genera con `npm run package:mac`.
 
 ## Pruebas
 

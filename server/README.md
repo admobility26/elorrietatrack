@@ -1,6 +1,6 @@
 # Web independiente de ElorrietaTrack
 
-El instalable funciona localmente sin cuenta web. La web conserva correo/contraseña y administración de usuarios, independientes de RutasAD. Este repositorio no publica una web automáticamente.
+El instalable funciona con licencia de escritorio, sin cuenta web de usuario. La web conserva correo/contraseña y administración de usuarios, independientes de RutasAD. Este repositorio no publica una web automáticamente.
 
 1. Autoriza tu cuenta: `npx wrangler login`.
 2. Crea una base NUEVA: `npx wrangler d1 create elorrietatrack-auth`.
@@ -16,3 +16,7 @@ No hay correo ni contraseña iniciales preconfigurados. Los usuarios de acceso n
 Se mantienen cookies HttpOnly/Secure/SameSite=Strict, sesiones revocables, hash/sal de contraseñas, control de rol y Origin y límite de intentos. D1 contiene solo cuentas/sesiones. Las bibliotecas siguen siendo locales y no se sincronizan automáticamente; el administrador no puede abrirlas remotamente. La separación local no es cifrado frente a alguien que lea el disco o perfil.
 
 Para pruebas locales usa `--local` con una base y administrador ficticios. Nunca apliques semillas ni borrados de prueba a producción.
+
+## Licencias de escritorio
+
+Aplicar `server/licenses.sql` a AUTH y mantener el secreto `LICENSE_PRIVATE_JWK`, correspondiente a `electron/license-public.json`. No generar un par nuevo al recompilar: invalidaría los instaladores existentes. La producción de ElorrietaTrack ya tiene estas tablas y el secreto configurados. Véase [guía](../LICENSES-GUIA.md).

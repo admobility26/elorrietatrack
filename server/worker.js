@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Aitor Delgado Martínez · AD Mobility
 // SPDX-License-Identifier: LicenseRef-RutasAD-Educational-NonCommercial-1.0
+import {licenseAPI,adminLicenses} from './licenses.js';
 import manifest from '../dist/.vite/manifest.json';
 import {digest,passwordHash,verifyPassword} from './password.js';
 const DAY=86400000;
@@ -24,6 +25,7 @@ async function body(request){if(Number(request.headers.get('content-length'))>40
 const validEmail=e=>typeof e==='string'&&e.length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 const validPassword=p=>typeof p==='string'&&p.length>=8&&p.length<=128;
 async function api(request,env,path){
+ if(path.startsWith('/api/license/')&&request.method==='POST')return licenseAPI(request,env,path,json);
  if(request.method!=='GET'&&request.headers.get('Origin')!==new URL(request.url).origin)return json({error:'Origen no permitido.'},403);
  if(path==='/api/login'&&request.method==='POST'){
   const b=await body(request),email=typeof b.email==='string'?b.email.trim().toLowerCase():'';
@@ -57,6 +59,7 @@ async function api(request,env,path){
  }
  if(path.startsWith('/api/admin/')){
   if(u.role!=='admin')return json({error:'Acceso reservado al administrador.'},403);
+  if(path.startsWith('/api/admin/licenses'))return adminLicenses(request,env,path,json);
   if(path==='/api/admin/users'&&request.method==='GET'){
    const {results}=await env.AUTH.prepare('SELECT id,email,role,active,created_at FROM users ORDER BY created_at').all();return json({users:results.map(publicUser)});
   }

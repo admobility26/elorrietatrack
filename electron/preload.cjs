@@ -1,6 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('elorrietaDesktop', Object.freeze({
+  licenseStatus:()=>ipcRenderer.invoke('license:status'),
+  activateLicense:key=>ipcRenderer.invoke('license:activate',key),
   onPrepareClose:callback=>{const listener=(_event,id)=>callback(id);ipcRenderer.on('autosave:prepare-close',listener);return ()=>ipcRenderer.removeListener('autosave:prepare-close',listener);},
   completeClose:(id,ok,error)=>ipcRenderer.send('autosave:close-ready',{id,ok,error}),
   beginMovie:name=>ipcRenderer.invoke('movie:begin',name),

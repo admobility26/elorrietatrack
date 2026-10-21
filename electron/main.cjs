@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Aitor Delgado Martínez · AD Mobility
 // SPDX-License-Identifier: LicenseRef-RutasAD-Educational-NonCommercial-1.0
-const { app, BrowserWindow, ipcMain, protocol, net, shell, session, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol, net, shell, session, dialog, safeStorage } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -16,6 +16,13 @@ const backupDirectory=organized.folders(dataDirectory).backups;
 const appDataDirectory = path.join(dataDirectory, '.datos-de-la-aplicacion');
 
 app.setPath('userData', appDataDirectory);
+const licensing=require('./licensing.cjs')({app,safeStorage});
+ipcMain.handle('license:status',()=>licensing.status());
+ipcMain.handle('license:activate',(_event,key)=>licensing.activate(String(key||'').slice(0,100)));
+// Enforce activation in the main process before opening protected data or starting recordings.
+const registerHandle=ipcMain.handle.bind(ipcMain);
+ipcMain.handle=(channel,handler)=>registerHandle(channel,(event,...args)=>{if(['library:load','movie:begin','files:save-video'].includes(channel)&&!licensing.check().valid)throw Error('Licencia no activa.');return handler(event,...args);});
+
 
 function ensureDataDirectories() {
   organized.ensure(dataDirectory);

@@ -40,6 +40,12 @@ function connectDesktopLibrary() {
 
 async function start() {
   const root = createRoot(document.getElementById('root'));
+  if(window.elorrietaDesktop?.licenseStatus){
+    const {default:DesktopLicense}=await import('./DesktopLicense.jsx');
+    let status;try{status=await window.elorrietaDesktop.licenseStatus();}catch(e){status={valid:false,error:e.message};}
+    if(!status.valid)await new Promise(resolve=>root.render(<DesktopLicense initial={status} onReady={resolve}/>));
+    setInterval(async()=>{try{const state=await window.elorrietaDesktop.licenseStatus();if(!state.valid){await finishAutosave();root.render(<DesktopLicense initial={state} onReady={()=>location.reload()}/>);}}catch{}},600000);
+  }
   if (import.meta.env.PROD && 'serviceWorker' in navigator && !window.elorrietaDesktop) navigator.serviceWorker.register('/sw.js').catch(() => {});
 
   if (import.meta.env.PROD && !window.elorrietaDesktop) {
