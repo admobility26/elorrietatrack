@@ -1,3 +1,4 @@
+import {loadVideoWatermark,drawVideoWatermark} from './videoWatermark.js';
 import {drawVideoCredits} from './mapCredits.js';
 import {rasterExportCredit} from './mapTiles.js';
 import HomeLogo from './HomeLogo.jsx';
@@ -1439,6 +1440,7 @@ export default function App() {
       return;
     }
     try {
+      const watermark=await loadVideoWatermark();
       const videoCanvas = document.createElement('canvas');
       videoCanvas.width = canvas.width;
       videoCanvas.height = canvas.height;
@@ -1458,6 +1460,7 @@ export default function App() {
         if (!recordingMarkers.current.playing) {
           drawExplanationPointer(context, canvas, explanationPointer.current);
         }
+        drawVideoWatermark(context,watermark,videoCanvas.width,videoCanvas.height);
         recordFrameRef.current = requestAnimationFrame(composeFrame);
       };
       composeFrame();

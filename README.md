@@ -6,7 +6,7 @@ Edición educativa independiente de RutasAD, creada por **Aitor Delgado Martíne
 
 - Trayectorias: capas, nombres/colores, edición individual de puntos, reordenación, arrastre, recolocación y eliminación, cámara, reproducción y catálogo completo de señales y puntos conflictivos.
 - Pizarra: copia de trazadas y señales, dibujo, flechas, vehículos animados, semáforos, preguntas/respuestas, pasos independientes, presentación, puntero, deshacer, guardado y biblioteca de explicaciones.
-- Grabación MP4 con micrófono; pausa de imagen manteniendo el audio y reanudación. PNG/PDF y guardado como proyecto de trayectoria.
+- Grabación MP4 con marca de agua del logo del cliente y micrófono; pausa de imagen manteniendo el audio y reanudación. PNG/PDF y guardado como proyecto de trayectoria.
 - Biblioteca con carátulas, búsqueda, ordenación, apertura y eliminación: **Trayectorias** y **Pizarras**.
 - Mapas gratuitos: **geoEuskadi**, **PNOA - IGN** y **OpenStreetMap**. Descarga de zonas solo con los dos primeros; OSM usa caché HTTP normal sin precarga masiva.
 - Autoguardado y recuperación; copias JSON con vista previa y conservar/actualizar; carpeta de datos en Chrome.
@@ -31,7 +31,7 @@ npm run build
 npm run package:win
 ```
 
-Windows: `release/ElorrietaTrack-1.2.0-Windows-x64-Setup.exe`. El EXE no está firmado; hay que probarlo en los equipos del centro antes de entregarlo. No se promete compatibilidad con cualquier versión antigua de Windows.
+Windows: `release/ElorrietaTrack-1.2.1-Windows-x64-Setup.exe`. El EXE no está firmado; hay que probarlo en los equipos del centro antes de entregarlo. No se promete compatibilidad con cualquier versión antigua de Windows.
 
 Vite es para pruebas locales sin identificación. La web de producción conserva administración propia y requiere una base D1 nueva y su administrador antes de publicarse: [configuración](server/README.md). No contiene contraseñas reales ni identificadores de la base de RutasAD.
 
