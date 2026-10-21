@@ -232,7 +232,7 @@ export default function DidacticBoard({createMap,Marker,catalog,signalDefinition
    <button type="button" disabled={value.destinations.length>=6} onClick={()=>update({...value,destinations:[...(value.destinations||[]),{text:'',arrow:'right'}]})}>{t('Helmuga gehitu','Añadir destino')}</button>
   </>}
  </>;
- return createPortal(<section ref={panelRef} className={`didactic-board ${presenting?'board-presenting':''}`} role="dialog" aria-modal="true" aria-label={t('Arbel didaktikoa','Pizarra didáctica')}>
+ return createPortal(<div className="premium-workspace premium-portal"><section ref={panelRef} className={`didactic-board ${presenting?'board-presenting':''}`} role="dialog" aria-modal="true" aria-label={t('Arbel didaktikoa','Pizarra didáctica')}>
   <header className="board-header"><HomeLogo language={language} width={120}/><div><strong>ElorrietaTrack Premium <span>/ {t('Arbel didaktikoa','Pizarra didáctica')}</span></strong><small>{caseId?caseName:t('Autogordetzea · proiektutik bereizita','Autoguardado · independiente del proyecto')}</small></div><div className="board-header-actions board-ui"><HelpControls language={language}/> <button disabled={capturing||captureBusy} onClick={openCases}>{t('Azalpenak','Mis explicaciones')}</button><button disabled={capturing||captureBusy} onClick={()=>{setModal('save');if(!caseName)setCaseName(t('Azalpen berria','Nueva explicación'));}}>{t('Gorde azalpena','Guardar explicación')}</button><button aria-pressed={presenting} onClick={()=>{setPresenting(!presenting);setEditor(null);setLocating(false);setDraftPath(null);}}>{presenting?t('Arbela editatu','Editar pizarra'):t('Aurkeztu','Presentar')}</button><button onClick={close}>{t('Pizarratik irten','Salir de pizarra')}</button></div></header>
   <div className="board-stage" onPointerMove={pointerMove} onPointerLeave={()=>{if(ringRef.current)ringRef.current.hidden=true;}}>
    <div className="board-map" ref={container}/>
@@ -290,5 +290,5 @@ export default function DidacticBoard({createMap,Marker,catalog,signalDefinition
    {error&&<p role="alert">{error}</p>}<button disabled={exporting} onClick={()=>setModal(null)}>{t('Itxi','Cerrar')}</button>
   </section></div>}
 
- </section>,document.body);
+ </section></div>,document.body);
 }
