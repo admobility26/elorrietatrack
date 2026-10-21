@@ -4,7 +4,7 @@
 En la web entra como administrador y abre Administración → Licencias.
 Selecciona Básico o Premium, escribe el destinatario y fecha final, y crea la clave.
 Las claves nuevas Premium empiezan por PRE-; las básicas por EEM-.
-La clave solo se muestra al crearla y activa un único equipo.
+La clave activa un único equipo. Desde la actualización del registro web, las nuevas claves se conservan cifradas y pueden consultarse en Administración; las anteriores solo conservaban su huella y se pueden registrar pegando la clave original.
 
 Para mejorar un equipo activado cambia el plan de su licencia en la lista. No crees otra activación. En ese equipo pulsa Comprobar renovación o reinicia con Internet. La comprobación automática se realiza cada diez minutos. La clave conserva su prefijo original; manda el plan firmado del servidor. La renovación de fecha y el bloqueo siguen en la misma lista. Sin Internet el permiso firmado puede seguir vigente hasta treinta días, limitado por la caducidad.
 

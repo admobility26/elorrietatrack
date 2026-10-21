@@ -31,3 +31,8 @@ El administrador web y las licencias de escritorio son independientes. El instal
 - La comprobación offline mitiga retrasos del reloj, pero no ofrece protección absoluta frente a la manipulación del equipo o una versión modificada del programa.
 - Prueba de protocolo, SQLite real, concurrencia, firmas, caducidad y caché: `node tests/licensing.mjs` (Node 24).
 - Mac: DMG Apple Silicon, sin firma Developer ID/notarización. Windows: EXE x64 sin firma comercial; pendiente de probar en un Windows físico.
+
+## Registro administrativo web y PDF
+La Administración web muestra Número / ID, destinatario, correo opcional, clave conservada, plan, activación, caducidad y estado. Las claves nuevas se conservan cifradas con una clave derivada del secreto del servidor; solo el administrador las consulta. Las claves antiguas no se pueden reconstruir desde su huella: Registrar clave antigua verifica la original antes de guardarla, sin consumir otra activación. El correo es una referencia administrativa y no vincula automáticamente una cuenta web.
+
+Buscar y filtrar por estado limita el informe de Descargar PDF. Activas significa activadas en un equipo, vigentes y sin bloquear. También se pueden listar pendientes, caducadas, bloqueadas o todas. El informe contiene claves, por lo que se conserva para uso administrativo. Esta actualización modifica solo la web/servidor: los instaladores existentes no se regeneran. Aplicar server/license-register.sql una vez antes de desplegar sobre una base existente.

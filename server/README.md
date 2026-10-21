@@ -20,3 +20,6 @@ Para pruebas locales usa `--local` con una base y administrador ficticios. Nunca
 ## Licencias de escritorio
 
 Aplicar `server/licenses.sql` a AUTH y mantener el secreto `LICENSE_PRIVATE_JWK`, correspondiente a `electron/license-public.json`. No generar un par nuevo al recompilar: invalidaría los instaladores existentes. La producción de ElorrietaTrack ya tiene estas tablas y el secreto configurados. Véase [guía](../LICENSES-GUIA.md).
+
+### Registro de claves y PDF (actualización solo web)
+Antes de desplegar esta actualización, ejecutar una sola vez `npx wrangler d1 execute elorrietatrack-auth --remote --file server/license-register.sql`. Añade `key_ciphertext` y `owner_email` sin cambiar activaciones ni permisos firmados. Las claves nuevas quedan cifradas AES-GCM usando una clave derivada del secreto de firma existente, con el ID como dato autenticado. No cambiar el secreto sin un procedimiento de recifrado. Solo `/api/admin/licenses` entrega las claves descifradas, tras comprobar el rol administrador. Las anteriores no son recuperables del hash; se pueden registrar desde la UI tras verificar la clave original. El PDF se genera localmente y respeta búsqueda y estado. No requiere volver a crear los instaladores.

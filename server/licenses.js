@@ -1,5 +1,10 @@
 import {digest} from './password.js';
 const DAY=86400000;
+// Separate purpose key derived from the existing server-only secret; never expose it.
+async function registerKey(env){const jwk=JSON.parse(env.LICENSE_PRIVATE_JWK);const raw=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('elorrietatrack:license-register:v1:'+jwk.d));return crypto.subtle.importKey('raw',raw,'AES-GCM',false,['encrypt','decrypt']);}
+async function seal(value,env,id){const iv=crypto.getRandomValues(new Uint8Array(12)),bytes=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:new TextEncoder().encode(id)},await registerKey(env),new TextEncoder().encode(value));return btoa(String.fromCharCode(...iv,...new Uint8Array(bytes)));}
+async function unseal(value,env,id){if(!value)return null;try{const bytes=Uint8Array.from(atob(value),c=>c.charCodeAt(0));return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.slice(0,12),additionalData:new TextEncoder().encode(id)},await registerKey(env),bytes.slice(12)));}catch{return null;}}
+const validEmail=value=>typeof value==='string'&&value.length<=254&&(!value||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
 // Prefix, case, whitespace and common hyphen separators are presentation only.
 export function normalizeLicenseKey(value){
  if(typeof value!=='string')return null;
@@ -49,19 +54,28 @@ async function issue(r,env,json){
 }
 export async function adminLicenses(request,env,path,json){
  if(path==='/api/admin/licenses'&&request.method==='GET'){
-  const {results}=await env.AUTH.prepare('SELECT id,label,plan,expires_at,active,activated_at,created_at FROM licenses ORDER BY created_at DESC').all();return json({licenses:results});
+  const {results}=await env.AUTH.prepare('SELECT id,label,owner_email,key_ciphertext,plan,expires_at,active,activated_at,created_at FROM licenses ORDER BY created_at DESC').all();return json({licenses:await Promise.all(results.map(async({key_ciphertext,...row})=>({...row,key:await unseal(key_ciphertext,env,row.id)})))});
  }
  const b=await request.json();
  if(path==='/api/admin/licenses'&&request.method==='POST'){
   if(typeof b.label!=='string'||!b.label.trim()||b.label.length>150||!Number.isSafeInteger(b.expiresAt)||b.expiresAt<=Date.now())return json({error:'Indica un nombre y una fecha futura.'},400);
+  const email=String(b.email||'').trim().toLowerCase();if(!validEmail(email))return json({error:'Correo del destinatario incorrecto.'},400);
   const plan=b.plan==='premium'?'premium':'basic';
   const key=(plan==='premium'?'PRE-':'EEM-')+crypto.randomUUID().replaceAll('-','').toUpperCase(),id=crypto.randomUUID();
-  await env.AUTH.prepare('INSERT INTO licenses(id,key_hash,label,expires_at,created_at,plan) VALUES(?,?,?,?,?,?)').bind(id,await digest(key),b.label.trim(),b.expiresAt,Date.now(),plan).run();
+  await env.AUTH.prepare('INSERT INTO licenses(id,key_hash,label,expires_at,created_at,plan,key_ciphertext,owner_email) VALUES(?,?,?,?,?,?,?,?)').bind(id,await digest(key),b.label.trim(),b.expiresAt,Date.now(),plan,await seal(key,env,id),email).run();
   return json({key,id},201);
  }
  const id=path.match(/^\/api\/admin\/licenses\/([a-f0-9-]+)$/)?.[1];
  if(id&&request.method==='PATCH'){
-  if(['basic','premium'].includes(b.plan))await env.AUTH.prepare('UPDATE licenses SET plan=? WHERE id=?').bind(b.plan,id).run();
+  if(typeof b.key==='string'){
+   const row=await env.AUTH.prepare('SELECT key_hash FROM licenses WHERE id=?').bind(id).first();let key=normalizeLicenseKey(b.key);if(!row||!key)return json({error:'Clave incorrecta.'},400);
+   if(await digest(key)!==row.key_hash&&key.startsWith('EEM-')&&!/^\s*EEM/i.test(b.key))key='PRE-'+key.slice(4);
+   if(await digest(key)!==row.key_hash)return json({error:'La clave no corresponde a esta licencia.'},400);
+   await env.AUTH.prepare('UPDATE licenses SET key_ciphertext=? WHERE id=?').bind(await seal(key,env,id),id).run();
+  }else if(typeof b.email==='string'){
+   const email=b.email.trim().toLowerCase();if(!validEmail(email))return json({error:'Correo incorrecto.'},400);
+   await env.AUTH.prepare('UPDATE licenses SET owner_email=? WHERE id=?').bind(email,id).run();
+  }else if(['basic','premium'].includes(b.plan))await env.AUTH.prepare('UPDATE licenses SET plan=? WHERE id=?').bind(b.plan,id).run();
   else if(typeof b.active==='boolean')await env.AUTH.prepare('UPDATE licenses SET active=? WHERE id=?').bind(b.active?1:0,id).run();
   else if(Number.isSafeInteger(b.expiresAt)&&b.expiresAt>Date.now())await env.AUTH.prepare('UPDATE licenses SET expires_at=? WHERE id=?').bind(b.expiresAt,id).run();
   else return json({error:'Fecha incorrecta.'},400);
