@@ -1,13 +1,25 @@
 import {digest} from './password.js';
 const DAY=86400000;
+// Prefix, case, whitespace and common hyphen separators are presentation only.
+export function normalizeLicenseKey(value){
+ if(typeof value!=='string')return null;
+ const compact=value.toUpperCase().replace(/[\s\u200B-\u200D\uFEFF\-\u2010-\u2015\u2212]/g,'').replace(/^EEM/,'');
+ return /^[A-F0-9]{32}$/.test(compact)?'EEM-'+compact:null;
+}
 export async function licenseAPI(request,env,path,json){
  const raw=await request.text();if(raw.length>4096)return json({error:'Solicitud demasiado grande.'},413);const b=JSON.parse(raw);
  if(path==='/api/license/activate'){
   if(typeof b.key!=='string'||b.key.length>100||!b.device||b.device.length!==64||typeof b.publicKey!=='string'||b.publicKey.length>1000)return json({error:'Datos de activación incorrectos.'},400);
-  const keyHash=await digest(b.key.trim().toUpperCase());
+  const normalized=normalizeLicenseKey(b.key);
+  if(!normalized)return json({error:'La clave debe contener 32 letras y números. Copia la clave completa; el prefijo EEM- es opcional.'},400);
+  const keyHash=await digest(normalized);
   // A consumed key can never activate again, including on the same device.
   const r=await env.AUTH.prepare('UPDATE licenses SET device=?,public_key=?,activated_at=? WHERE key_hash=? AND device IS NULL AND active=1 AND expires_at>? RETURNING *').bind(b.device,b.publicKey,Date.now(),keyHash,Date.now()).first();
-  if(!r)return json({error:'Clave usada, caducada, bloqueada o incorrecta. Si ya la activaste, pulsa Comprobar renovación.'},409);
+  if(!r){
+   const existing=await env.AUTH.prepare('SELECT active,expires_at,device FROM licenses WHERE key_hash=?').bind(keyHash).first();
+   const error=!existing?'No se encuentra esta clave. Revisa que la hayas copiado completa.':!existing.active?'Esta licencia está bloqueada. Contacta con el administrador.':existing.expires_at<=Date.now()?'Esta licencia ha caducado. El administrador debe renovar su fecha.':'Esta clave ya se utilizó. En el equipo activado pulsa Comprobar renovación; para otro equipo necesitas una clave nueva.';
+   return json({error},409);
+  }
   return issue(r,env,json);
  }
  if(path==='/api/license/refresh'){
