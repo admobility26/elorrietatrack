@@ -94,7 +94,8 @@ app.on('will-quit',()=>{for(const entry of movieWrites.values()){void entry.hand
 const distDirectory = path.join(app.getAppPath(), 'dist');
 
 let quitting=false;
-const closingWindows=new Map();
+const closingWindows=new Map(),autosaveClients=new Set();
+ipcMain.on('autosave:attached',event=>autosaveClients.add(event.sender.id));
 app.on('before-quit',()=>{quitting=true;});
 ipcMain.on('autosave:close-ready',(event,result)=>{
  const pending=closingWindows.get(event.sender.id);if(!pending||result?.id!==pending.id)return;
@@ -118,14 +119,20 @@ async function createWindow() {
     },
   });
 
-  window.on('close',event=>{const pending=closingWindows.get(window.webContents.id);if(pending?.ready)return;event.preventDefault();if(pending)return;const id=require('node:crypto').randomUUID();closingWindows.set(window.webContents.id,{window,id,ready:false});window.webContents.send('autosave:prepare-close',id);});
+  window.on('close',event=>{if(!autosaveClients.has(window.webContents.id))return;const pending=closingWindows.get(window.webContents.id);if(pending?.ready)return;event.preventDefault();if(pending)return;const id=require('node:crypto').randomUUID();closingWindows.set(window.webContents.id,{window,id,ready:false});window.webContents.send('autosave:prepare-close',id);});
   const rendererId=window.webContents.id;window.on('closed',()=>closingWindows.delete(rendererId));
   window.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+    if (/^https?:\/\//i.test(url)||url.startsWith('mailto:admobility26@gmail.com')) shell.openExternal(url);
+    if(/^elorrietatrack:\/\/app\/(licencia\.html|THIRD-PARTY-NOTICES\.txt|LICENSE\.txt|runtime-licenses\.html)$/.test(url)){
+      const child=new BrowserWindow({parent:window,width:1000,height:800,title:'ElorrietaTrack · Créditos',webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false}});
+      child.webContents.setWindowOpenHandler(({url:next})=>{if(/^https?:\/\//i.test(next)||next.startsWith('mailto:admobility26@gmail.com'))shell.openExternal(next);else if(/^elorrietatrack:\/\/app\/(runtime-licenses\.html|THIRD-PARTY-NOTICES\.txt|LICENSE\.txt)$/.test(next))child.loadURL(next);return {action:'deny'};});
+      child.webContents.on('will-navigate',(event,next)=>{if(/^https?:\/\//i.test(next)||next.startsWith('mailto:')){event.preventDefault();if(/^https?:\/\//i.test(next)||next.startsWith('mailto:admobility26@gmail.com'))shell.openExternal(next);}});
+      void child.loadURL(url);
+    }
     return { action: 'deny' };
   });
   window.webContents.on('will-navigate', (event, url) => {
-    if (!url.startsWith('elorrietatrack://')) event.preventDefault();
+    if (!url.startsWith('elorrietatrack://')){event.preventDefault();if(url.startsWith('mailto:admobility26@gmail.com'))void shell.openExternal(url);}
   });
   if (process.env.ELECTRON_START_URL) await window.loadURL(process.env.ELECTRON_START_URL);
   else await window.loadURL('elorrietatrack://app/index.html');
@@ -133,11 +140,12 @@ async function createWindow() {
 
 app.whenReady().then(async () => {
   // Identify the native app to OSM; Chromium's normal HTTP cache honors tile freshness.
-  session.defaultSession.webRequest.onBeforeSendHeaders({urls:['https://tile.openstreetmap.org/*']},(details,callback)=>callback({requestHeaders:{...details.requestHeaders,'User-Agent':`ElorrietaTrack/${app.getVersion()} (+https://github.com/promociones7819-stack/elorrietaTrack)`}}));
+  session.defaultSession.webRequest.onBeforeSendHeaders({urls:['https://tile.openstreetmap.org/*']},(details,callback)=>callback({requestHeaders:{...details.requestHeaders,'User-Agent':`ElorrietaTrack/${app.getVersion()} (+https://github.com/promociones7819-stack/elorrietaTrack; contact: admobility26@gmail.com)`}}));
   session.defaultSession.on('will-download',(_event,item)=>{const raw=item.getFilename(),directory=organized.downloadFolder(dataDirectory,raw);if(!directory)return;organized.ensure(dataDirectory);const extension=path.extname(raw).toLowerCase(),name=cleanFileName(raw,extension);item.setSavePath(organized.uniqueFile(directory,name));});
   const serveMapTile=require('./map-tiles.cjs')({directory:path.join(appDataDirectory,'cache-ortofoto'),fetchTile:(url,options)=>net.fetch(url,options)});
   const servePnoaTile=require('./map-tiles.cjs')({directory:path.join(appDataDirectory,'cache-ortofoto-pnoa'),fetchTile:(url,options)=>net.fetch(url,options),provider:'pnoa'});
   protocol.handle('elorrietatrack', async request => {
+    if(new URL(request.url).hostname==='app'&&new URL(request.url).pathname==='/runtime-licenses.html'){const target=app.isPackaged?path.join(process.resourcesPath,'legal','Chromium-notices.html'):path.join(__dirname,'..','node_modules','electron','dist','LICENSES.chromium.html');return net.fetch(pathToFileURL(target).toString());}
     if(new URL(request.url).pathname.startsWith('/__pnoa/'))return servePnoaTile(request);
     if(new URL(request.url).pathname.startsWith('/__geo/'))return serveMapTile(request);
     if(new URL(request.url).hostname==='app'&&new URL(request.url).pathname.startsWith('/__recordings/')){

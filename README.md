@@ -31,7 +31,7 @@ npm run build
 npm run package:win
 ```
 
-Windows: `release/ElorrietaTrack-1.1.0-Windows-x64-Setup.exe`. El EXE no está firmado; hay que probarlo en los equipos del centro antes de entregarlo. No se promete compatibilidad con cualquier versión antigua de Windows.
+Windows: `release/ElorrietaTrack-1.2.0-Windows-x64-Setup.exe`. El EXE no está firmado; hay que probarlo en los equipos del centro antes de entregarlo. No se promete compatibilidad con cualquier versión antigua de Windows.
 
 Vite es para pruebas locales sin identificación. La web de producción conserva administración propia y requiere una base D1 nueva y su administrador antes de publicarse: [configuración](server/README.md). No contiene contraseñas reales ni identificadores de la base de RutasAD.
 
@@ -58,3 +58,9 @@ Los mapas de las pruebas son imágenes sintéticas locales; no se sobrecargan se
 ## Autoría
 
 © 2026 Aitor Delgado Martínez · AD Mobility. Derivada de RutasAD por el mismo autor. Se conservan [LICENSE](LICENSE) y las licencias de terceros. El titular puede conceder separadamente la licencia de uso acordada con el centro. El logo del centro se incorpora a partir del archivo facilitado por el usuario, conservando la imagen recibida. Los derechos de esa marca corresponden a su titular, separados de la autoría del código.
+
+## Ayuda, créditos y uso comercial
+
+Manual integrado Euskara/Castellano, disponible sin conexión e imprimible como PDF. Contacto: admobility26@gmail.com. El logo regresa al inicio tras guardar/finalizar el trabajo.
+
+La revisión de licencias, inventario y límites se documenta en [legal/REVISION-COMERCIAL.md](legal/REVISION-COMERCIAL.md). El uso comercial del logo EEM requiere autorización de su titular; los avisos de autoría no la sustituyen. Las dependencias y los mapas mantienen sus propias licencias; la autorización de uso profesional de la app no concede derechos sobre ellos.

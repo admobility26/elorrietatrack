@@ -1,3 +1,7 @@
+import {drawVideoCredits} from './mapCredits.js';
+import {rasterExportCredit} from './mapTiles.js';
+import HomeLogo from './HomeLogo.jsx';
+import HelpControls from './HelpControls.jsx';
 import { rasterTileUrl, rasterSource, rasterName, rasterAttribution, rasterCache, rasterLabel, offlineAllowed } from './mapTiles.js';
 import AutosaveStatus from './AutosaveStatus.jsx';
 import { registerAutosave, writeChanged, readSession, validBoardRecovery, SESSION_KEY, BOARD_DRAFT_KEY } from './autosave.js';
@@ -832,7 +836,7 @@ export default function App() {
       showCompass: true
     }), 'top-right');
     map.addControl(new AttributionControl({
-      compact: mapProvider !== 'osm'
+      compact: false
     }), 'bottom-right');
     map.on('load', () => {
       map.setMaxZoom(20);
@@ -1440,17 +1444,10 @@ export default function App() {
       videoCanvas.height = canvas.height;
       const context = videoCanvas.getContext('2d');
       if (!context || !videoCanvas.captureStream) throw new Error('Canvas recording is unavailable');
-      const attribution = mapRef.current.getContainer().querySelector('.maplibregl-ctrl-attrib-inner')?.innerText?.replace(/\s+/g, ' ').trim() || rasterAttribution(mapProvider);
+      const attribution = rasterExportCredit(mapProvider)+' · Anotaciones didácticas';
       const composeFrame = () => {
         context.drawImage(canvas, 0, 0, videoCanvas.width, videoCanvas.height);
-        const fontSize = Math.max(11, Math.round(videoCanvas.width / 110));
-        context.font = `500 ${fontSize}px sans-serif`;
-        const textWidth = context.measureText(attribution).width;
-        const pad = Math.round(fontSize * 0.65);
-        context.fillStyle = 'rgba(255,255,255,0.9)';
-        context.fillRect(12, videoCanvas.height - fontSize - pad * 2 - 12, textWidth + pad * 2, fontSize + pad * 2);
-        context.fillStyle = '#37433b';
-        context.fillText(attribution, 12 + pad, videoCanvas.height - pad - 12);
+        drawVideoCredits(context,attribution,videoCanvas.width,videoCanvas.height);
         const framePosition = interpolateRoute(videoRoute.points, progressRef.current).coords;
         {
           const state = recordingMarkers.current;
@@ -1950,7 +1947,7 @@ export default function App() {
     });
     map.addControl(new NavigationControl(), 'top-right');
     map.addControl(new AttributionControl({
-      compact: mapProvider !== 'osm'
+      compact: false
     }), 'bottom-right');
     return map;
   };
@@ -1963,8 +1960,8 @@ export default function App() {
       setBoardSeed(null);
     }} />}
     <LegacyImport /><header className="topbar">
-      <div className="brand"><img className="institution-logo" src="./elorrieta-logo.svg" alt="Elorrieta-Erreka Mari" /><div><div className="brand-name">ElorrietaTrack</div><div className="brand-subtitle">Trayectorias y pizarra didáctica</div></div></div>
-      <div className="topbar-right"><AutosaveStatus language={language} /><AccountControls language={language} disabled={recording || false} /><button className="library-launch" disabled={recording || false} onClick={showLibrary}>▤ {t("Liburutegia", "Biblioteca")}</button><span className="map-status"><i className={mapReady && !mapError ? 'status-dot ready' : 'status-dot'} />{rasterLabel(mapProvider)}</span><button className="icon-button" title="Centrar en Bizkaia" onClick={() => mapRef.current?.flyTo({
+      <div className="brand"><HomeLogo className="institution-logo" language={language}/><div><div className="brand-name">ElorrietaTrack</div><div className="brand-subtitle">Trayectorias y pizarra didáctica</div></div></div>
+      <div className="topbar-right"><AutosaveStatus language={language} /><HelpControls language={language}/><AccountControls language={language} disabled={recording || false} /><button className="library-launch" disabled={recording || false} onClick={showLibrary}>▤ {t("Liburutegia", "Biblioteca")}</button><span className="map-status"><i className={mapReady && !mapError ? 'status-dot ready' : 'status-dot'} />{rasterLabel(mapProvider)}</span><button className="icon-button" title="Centrar en Bizkaia" onClick={() => mapRef.current?.flyTo({
           center: START,
           zoom: 10.1,
           pitch: 0,
@@ -2174,7 +2171,7 @@ export default function App() {
             setMode(mode === 'add' ? 'select' : 'add');
             setPlaying(false);
           }}><span>＋</span> Añadir punto</button>}<button className="map-tool offline-map-button" onClick={downloadOfflineArea} disabled={offlineDownloading || !offlineAllowed(mapProvider)} title={!offlineAllowed(mapProvider) ? 'La descarga offline está disponible con geoEuskadi y PNOA' : ''}><span>⇩</span> {offlineDownloading ? 'Guardando zona…' : 'Guardar zona offline'}</button></div>
-        {""}{mapSettingsOpen && <div className="map-settings-card"><div className="map-settings-heading"><strong>Fuente del mapa</strong><button aria-label="Cerrar configuración del mapa" onClick={() => setMapSettingsOpen(false)}>×</button></div><div className="map-provider-options"><button className={mapProvider === 'geoEuskadi' ? 'selected' : ''} onClick={() => selectMapProvider('geoEuskadi')}>GeoEuskadi <small>Ortofoto de Euskadi · sin token</small></button><button className={mapProvider === 'pnoa' ? 'selected' : ''} onClick={() => selectMapProvider('pnoa')}>PNOA · IGN <small>{t('Ortoargazkia · doakoa · gakorik gabe', 'Ortofoto · gratuito · sin clave')}</small></button><button className={mapProvider === 'osm' ? 'selected' : ''} onClick={() => selectMapProvider('osm')}>OpenStreetMap <small>{t('Kale-mapa · doakoa · gakorik gabe', 'Calles · gratuito · sin clave')}</small></button>null null</div><small className="map-provider-help">{t('Doako mapak: geoEuskadi, PNOA eta OpenStreetMap.', 'Mapas gratuitos: geoEuskadi, PNOA y OpenStreetMap.')}</small>{mapProvider === 'osm' && <p className="map-provider-help">{t('Kale-mapa, ortoargazkirik gabe. Zonak deskargatzea ez dago baimenduta.', 'Mapa de calles. Sin descarga de zonas offline. Las grabaciones mantienen la atribución del mapa.')} <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">{t('Mapa-akats baten berri eman', 'Comunicar un error del mapa')}</a></p>}{false}{false}</div>}
+        {""}{mapSettingsOpen && <div className="map-settings-card"><div className="map-settings-heading"><strong>Fuente del mapa</strong><button aria-label="Cerrar configuración del mapa" onClick={() => setMapSettingsOpen(false)}>×</button></div><div className="map-provider-options"><button className={mapProvider === 'geoEuskadi' ? 'selected' : ''} onClick={() => selectMapProvider('geoEuskadi')}>GeoEuskadi <small>Ortofoto de Euskadi · sin token</small></button><button className={mapProvider === 'pnoa' ? 'selected' : ''} onClick={() => selectMapProvider('pnoa')}>PNOA · IGN <small>{t('Ortoargazkia · doakoa · gakorik gabe', 'Ortofoto · gratuito · sin clave')}</small></button><button className={mapProvider === 'osm' ? 'selected' : ''} onClick={() => selectMapProvider('osm')}>OpenStreetMap <small>{t('Kale-mapa · doakoa · gakorik gabe', 'Calles · gratuito · sin clave')}</small></button></div><small className="map-provider-help">{t('Doako mapak: geoEuskadi, PNOA eta OpenStreetMap.', 'Mapas gratuitos: geoEuskadi, PNOA y OpenStreetMap.')}</small>{mapProvider === 'osm' && <p className="map-provider-help">{t('Kale-mapa, ortoargazkirik gabe. Zonak deskargatzea ez dago baimenduta.', 'Mapa de calles. Sin descarga de zonas offline. Las grabaciones mantienen la atribución del mapa.')} <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">{t('Mapa-akats baten berri eman', 'Comunicar un error del mapa')}</a></p>}{false}{false}</div>}
         {offlineMessage && <div className="offline-map-status" role="status">{offlineMessage}</div>}
         <div className="map-bottom-left"><span className="north">N</span><span className="scale-line" /><span>{rasterLabel(mapProvider)}</span></div>
         {mapReady && <div className="map-hint">{placingMarker ? <><b>＋</b> Haz clic en el mapa para colocar la señal <button onClick={cancelMarkerPlacement}>{t("Utzi", "Cancelar")}</button></> : mode === 'add' ? <><b>＋</b> Haz clic en el mapa para marcar el siguiente punto</> : <><b>⌘</b> Desplaza y acerca el mapa · Selecciona una ruta</>}</div>}

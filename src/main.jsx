@@ -7,6 +7,7 @@ import {watchDataFolder,saveDataFolder,reconnectDataFolder} from './dataFolder.j
 import { createRoot } from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './styles.css';
+import './help.css';
 
 const STORAGE_PREFIX = 'elorrietatrack-';
 const librarySnapshot = () => Object.fromEntries(Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
@@ -77,15 +78,15 @@ async function start() {
   window.addEventListener('beforeunload',event=>{checkpointAutosave();if(!window.elorrietaDesktop&&hasActiveWork()){event.preventDefault();event.returnValue='';}});
   if(!window.elorrietaDesktop)reconnectDataFolder().catch(e=>reportAutosave('error',e.message));
   const openApp = async () => {
+    if(window.elorrietaDesktop?.licenseStatus){const state=await window.elorrietaDesktop.licenseStatus();if(!state.valid){const {default:DesktopLicense}=await import('./DesktopLicense.jsx');root.render(<DesktopLicense initial={state} onReady={()=>window.dispatchEvent(new Event('elorrietatrack:home'))}/>);return;}}
     const { default: App } = await import('./App.jsx');
     root.render(<React.StrictMode><App /></React.StrictMode>);
   };
-  if (window.elorrietaDesktop) {
-    await openApp();
-  } else {
-    const { default: Welcome } = await import('./Welcome.jsx');
-    root.render(<React.StrictMode><Welcome onEnter={openApp} /></React.StrictMode>);
-  }
+  let goingHome=false;
+  const showHome=async()=>{if(goingHome)return;goingHome=true;try{await finishAutosave();await saveDataFolder();if(window.elorrietaDesktop)await window.elorrietaDesktop.saveLibrary(librarySnapshot());const {default:Welcome}=await import('./Welcome.jsx');root.render(<React.StrictMode><Welcome onEnter={openApp}/></React.StrictMode>);}catch(e){reportAutosave('error',e.message);}finally{goingHome=false;}};
+  window.addEventListener('elorrietatrack:home',showHome);
+  window.addEventListener('message',event=>{if(event.origin===location.origin&&event.data==='elorrietatrack:home')window.dispatchEvent(new Event('elorrietatrack:home'));});
+  await showHome();
 }
 
 start();

@@ -11,6 +11,9 @@ export const geoTileUrl=(z,x,y)=>rasterTileUrl('geoEuskadi',z,x,y);
 export const rasterName=provider=>provider==='osm'?'OpenStreetMap':provider==='pnoa'?'PNOA · IGN':'geoEuskadi';
 export const rasterLabel=provider=>provider==='osm'?'Mapa OpenStreetMap':`Ortofoto ${rasterName(provider)}`;
 export const offlineAllowed=provider=>['geoEuskadi','pnoa'].includes(provider);
-export const rasterAttribution=provider=>provider==='osm'?'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors':provider==='pnoa'?'© Instituto Geográfico Nacional de España · PNOA · CC BY 4.0 ign.es':'© Eusko Jaurlaritza / Gobierno Vasco · geoEuskadi';
+export const rasterAttribution=provider=>provider==='osm'?'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors · ODbL</a>':provider==='pnoa'?'PNOA · IGN / SCNE · <a href="https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf" target="_blank" rel="noopener">CC BY 4.0 scne.es</a>':'© <a href="https://www.geo.euskadi.eus/webgeo00-content/es/" target="_blank" rel="noopener">Eusko Jaurlaritza / Gobierno Vasco. geoEuskadi</a>';
+export const rasterExportCredit=provider=>provider==='osm'?'© OpenStreetMap contributors · ODbL · https://www.openstreetmap.org/copyright':provider==='pnoa'?'Obra derivada de PNOA máxima actualidad · IGN / SCNE · CC BY 4.0 scne.es':'© Eusko Jaurlaritza / Gobierno Vasco. geoEuskadi · geo.euskadi.eus';
+export function mapExportCredit(map){const source=map.getStyle()?.sources?.['basemap-source'],data=JSON.stringify(source||{});return rasterExportCredit(/openstreetmap/i.test(data)?'osm':/pnoa|ign\.es|SCNE/i.test(data)?'pnoa':'geoEuskadi')+' · Anotaciones didácticas añadidas';}
+
 export const rasterCache=provider=>provider==='pnoa'?'ortofoto-pnoa-v1':'ortofoto-euskadi-v1';
 export const rasterSource=provider=>({type:'raster',tiles:[rasterTileUrl(provider,'{z}','{x}','{y}')],maxzoom:provider==='osm'?19:20,tileSize:256,attribution:rasterAttribution(provider)});

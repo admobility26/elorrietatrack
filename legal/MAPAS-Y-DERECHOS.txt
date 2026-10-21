@@ -1,0 +1,68 @@
+CRÉDITOS Y DERECHOS — ELORRIETATRACK
+Revisión técnica documental: 21/10/2026.
+
+Aplicación original: © 2026 Aitor Delgado Martínez · AD Mobility.
+Contacto: admobility26@gmail.com.
+El uso profesional o docente remunerado de la aplicación está permitido cuando
+lo autoriza su titular mediante la licencia de uso correspondiente. Esto no
+transfiere la propiedad del código ni autoriza su reventa. La licencia del código
+visible y la licencia de uso de la aplicación son distintas. Los componentes de
+terceros mantienen sus condiciones; no se les aplica la restricción no comercial
+del código original.
+
+CARTOGRAFÍA
+- geoEuskadi: Eusko Jaurlaritza / Gobierno Vasco. geoEuskadi. El catálogo oficial
+  autoriza usos con reconocimiento de autoría. Respetar condiciones específicas
+  de cada capa y no sugerir respaldo institucional.
+  https://www.geo.euskadi.eus/webgeo00-content/es/
+  https://www.euskadi.eus/geograficos/servicio-de-visualizacion-de-ortofotografias-de-la-comunidad-autonoma-del-pais-vasco/web01-tramite/es/
+- PNOA máxima actualidad: Instituto Geográfico Nacional y productores del Sistema
+  Cartográfico Nacional. El GetCapabilities del WMTS utilizado declara
+  «CC BY 4.0 scne.es». Mosaico de fechas variables; no atribuirle un año único.
+  Las composiciones didácticas se identifican como obra derivada con anotaciones.
+  https://www.ign.es/wmts/pnoa-ma?SERVICE=WMTS&REQUEST=GetCapabilities
+  https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf
+  https://creativecommons.org/licenses/by/4.0/
+- OpenStreetMap: © OpenStreetMap contributors. Datos ODbL; los mapas/obras
+  producidas deben reconocer su procedencia. La licencia del código no restringe
+  esos datos. Las trazadas independientes del usuario no se publican automáticamente
+  como una base derivada de OSM.
+  https://www.openstreetmap.org/copyright
+  https://opendatacommons.org/licenses/odbl/1-0/
+  El servidor público tile.openstreetmap.org es de capacidad limitada, sin SLA;
+  no se permite descarga masiva ni precarga offline. No se ofrece como servicio
+  comercial garantizado. Para una explotación a escala contratar un proveedor
+  con condiciones apropiadas o usar infraestructura propia.
+  https://operations.osmfoundation.org/policies/tiles/
+
+BIBLIOTECAS Y TIPOGRAFÍAS
+React / React DOM / scheduler: Meta Platforms, Inc. y colaboradores; MIT.
+MapLibre GL JS: MapLibre y colaboradores, Mapbox y demás titulares citados en sus
+licencias; BSD-3-Clause y avisos internos MIT/ISC/BSD de componentes heredados.
+La presencia de bibliotecas @mapbox permisivas no implica uso del servicio Mapbox.
+pdf-lib: Andrew Dillon; MIT. Sus dependencias conservan sus avisos propios.
+Electron: Electron contributors / GitHub Inc.; MIT. Chromium y componentes
+incluidos (incluidos códecs) conservan sus licencias; se suministran los avisos
+originales completos con el instalador. No se eliminan avisos del motor.
+DM Sans, DM Mono y Manrope: distribuidas localmente, sin modificar, bajo SIL Open
+Font License 1.1; autores y textos íntegros en el inventario de terceros.
+Inventario completo: THIRD-PARTY-NOTICES.txt.
+
+IDENTIDAD VISUAL Y CONTENIDOS
+El logo Elorrieta-Erreka Mari es una identidad ajena suministrada por el promotor;
+no se atribuye su propiedad al autor de la aplicación. Su inclusión no acredita
+patrocinio o afiliación ni concede permiso para comercializar esa marca.
+Antes de vender una edición con ese logo, obtener autorización de su titular
+para ese uso y conservarla por escrito. La atribución por sí sola no basta.
+Los vehículos y símbolos didácticos se dibujan en el código de la app; no se han
+incorporado imágenes del catálogo DGT. No son señales oficiales certificadas.
+Los proyectos, voz, vídeo y contenidos aportados corresponden a sus titulares.
+La app no otorga derechos sobre imágenes, voces, datos personales o marcas ajenas.
+
+ALCANCE DE ESTA REVISIÓN
+Se han inspeccionado dependencias de ejecución del lockfile, recursos distribuidos,
+licencias empaquetadas y rutas de atribución en mapa y exportación. El inventario
+permite auditar lo distribuido. No es una certificación jurídica integral, no
+acredita la titularidad del promotor sobre cada aportación histórica y no sustituye
+la revisión de contratos de venta, privacidad, imagen, marcas o patentes aplicables.
+Las condiciones de servicios externos pueden cambiar; consultar los enlaces de origen.
