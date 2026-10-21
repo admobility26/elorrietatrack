@@ -11,6 +11,7 @@ app.setName('ElorrietaTrack');
 
 const dataDirectory = require('./data-directory.cjs')(app.getPath('documents'));
 const libraryPath = path.join(dataDirectory, 'Biblioteca de recorridos.json');
+const gpxDirectory=path.join(dataDirectory,'Archivos GPX');
 const videoDirectory = path.join(dataDirectory, 'Vídeos MP4');
 const backupDirectory=organized.folders(dataDirectory).backups;
 const appDataDirectory = path.join(dataDirectory, '.datos-de-la-aplicacion');
@@ -21,13 +22,21 @@ ipcMain.handle('license:status',()=>licensing.status());
 ipcMain.handle('license:activate',(_event,key)=>licensing.activate(String(key||'').slice(0,100)));
 // Enforce activation in the main process before opening protected data or starting recordings.
 const registerHandle=ipcMain.handle.bind(ipcMain);
-ipcMain.handle=(channel,handler)=>registerHandle(channel,(event,...args)=>{if(['library:load','movie:begin','files:save-video'].includes(channel)&&!licensing.check().valid)throw Error('Licencia no activa.');return handler(event,...args);});
+ipcMain.handle=(channel,handler)=>registerHandle(channel,(event,...args)=>{if((channel.startsWith('workspace:')||channel.startsWith('bluetooth:')||channel==='files:save-gpx')&&licensing.check().plan!=='premium')throw Error('Función Premium. Actualiza tu suscripción.');if(['library:load','movie:begin','files:save-video'].includes(channel)&&!licensing.check().valid)throw Error('Licencia no activa.');return handler(event,...args);});
 
 
 function ensureDataDirectories() {
   organized.ensure(dataDirectory);
   for (const directory of [appDataDirectory]) fs.mkdirSync(directory, { recursive: true });
 }
+
+let workspaceDirectory=null;
+const movieWrites=new Map();
+function workspaceFile(name){if(!workspaceDirectory||typeof name!=='string'||name!==path.basename(name)||name.includes('\\'))throw Error('Archivo fuera de la carpeta de trabajo.');return path.join(workspaceDirectory,name);}
+ipcMain.handle('workspace:choose',async()=>{const result=await dialog.showOpenDialog({title:'Carpeta de la clase · ElorrietaTrack Premium',properties:['openDirectory']});if(result.canceled)return null;workspaceDirectory=result.filePaths[0];const entries=await fs.promises.readdir(workspaceDirectory,{withFileTypes:true});const files=[];for(const e of entries)if(e.isFile())files.push({name:e.name,size:(await fs.promises.stat(path.join(workspaceDirectory,e.name))).size});return {name:path.basename(workspaceDirectory),files};});
+ipcMain.handle('workspace:check-media',async(_event,name,size)=>{try{const info=await fs.promises.stat(workspaceFile(name));if(!info.isFile()||info.size!==size)throw Error('changed');return true;}catch{throw Error('No se encuentra el vídeo original o ha cambiado. Si has renombrado o movido la carpeta, pulsa Abrir carpeta y selecciona su ubicación actual.');}});
+ipcMain.handle('workspace:read-text',async(_event,name)=>{if(!/\.(gpx|json)$/i.test(name))throw Error('Solo se leen proyectos JSON y tracks GPX.');return fs.promises.readFile(workspaceFile(name),'utf8');});
+ipcMain.handle('workspace:write-project',async(_event,text)=>{const target=workspaceFile('ElorrietaTrack Premium-proyecto.json');const parsed=JSON.parse(text);if(parsed.format!=='elorrietatrack-premium-project')throw Error('Proyecto inválido.');const temporary=target+'.tmp';await fs.promises.writeFile(temporary,text,'utf8');await fs.promises.rename(temporary,target);});
 
 function writeLibrary(storage) {
   ensureDataDirectories();organized.writeLibrary(dataDirectory,storage);
@@ -71,6 +80,14 @@ ipcMain.handle('backup:save',async(event,{name,data}={})=>{
   return {saved:true,name:path.basename(result.filePath),path:result.filePath};
 });
 
+ipcMain.handle('files:save-gpx', async (_event, fileName, contents) => {
+  ensureDataDirectories();
+  const safeName = cleanFileName(fileName, '.gpx');
+  const target=organized.uniqueFile(gpxDirectory,safeName);await fs.promises.writeFile(target,String(contents),'utf8');
+  return path.join('Archivos GPX',path.basename(target));
+});
+
+
 ipcMain.handle('files:save-video', async (_event, fileName, bytes) => {
   ensureDataDirectories();
   const safeName = cleanFileName(fileName, '.mp4');
@@ -84,7 +101,7 @@ ipcMain.handle('files:open-data-folder', async () => {
 });
 ipcMain.on('files:get-data-directory', event => { event.returnValue = dataDirectory; });
 
-const movieWrites=new Map();
+
 ipcMain.handle('movie:begin',async(_event,suggestedName)=>{const result=await dialog.showSaveDialog({title:'Guardar montaje MP4',defaultPath:path.join(videoDirectory,cleanFileName(suggestedName||'ElorrietaTrack-mapa-pip.mp4','.mp4')),filters:[{name:'MP4',extensions:['mp4']}]});if(result.canceled)return null;const id=require('node:crypto').randomUUID(),temporary=result.filePath+'.'+id+'.partial';const handle=await fs.promises.open(temporary,'wx');movieWrites.set(id,{handle,temporary,target:result.filePath});return {id,name:path.basename(result.filePath)};});
 ipcMain.handle('movie:write',async(_event,id,bytes)=>{const entry=movieWrites.get(id);if(!entry)throw Error('La exportación no está abierta.');if(!(bytes instanceof ArrayBuffer)||bytes.byteLength>32*1024*1024)throw Error('Bloque de vídeo inválido.');await entry.handle.writeFile(Buffer.from(bytes));});
 ipcMain.handle('movie:finish',async(_event,id)=>{const entry=movieWrites.get(id);if(!entry)throw Error('La exportación no está abierta.');await entry.handle.sync();await entry.handle.close();entry.closed=true;await fs.promises.rename(entry.temporary,entry.target);movieWrites.delete(id);return path.dirname(entry.target)===path.resolve(videoDirectory)?{url:`elorrietatrack://app/__recordings/${encodeURIComponent(path.basename(entry.target))}`} : {};});
@@ -120,6 +137,7 @@ async function createWindow() {
   });
 
   window.on('close',event=>{if(!autosaveClients.has(window.webContents.id))return;const pending=closingWindows.get(window.webContents.id);if(pending?.ready)return;event.preventDefault();if(pending)return;const id=require('node:crypto').randomUUID();closingWindows.set(window.webContents.id,{window,id,ready:false});window.webContents.send('autosave:prepare-close',id);});
+  require('./bluetooth.cjs')(window,()=>licensing.check().valid&&licensing.check().plan==='premium');
   const rendererId=window.webContents.id;window.on('closed',()=>closingWindows.delete(rendererId));
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:\/\//i.test(url)||url.startsWith('mailto:admobility26@gmail.com')) shell.openExternal(url);
@@ -146,11 +164,12 @@ app.whenReady().then(async () => {
   const servePnoaTile=require('./map-tiles.cjs')({directory:path.join(appDataDirectory,'cache-ortofoto-pnoa'),fetchTile:(url,options)=>net.fetch(url,options),provider:'pnoa'});
   protocol.handle('elorrietatrack', async request => {
     if(new URL(request.url).hostname==='app'&&new URL(request.url).pathname==='/runtime-licenses.html'){const target=app.isPackaged?path.join(process.resourcesPath,'legal','Chromium-notices.html'):path.join(__dirname,'..','node_modules','electron','dist','LICENSES.chromium.html');return net.fetch(pathToFileURL(target).toString());}
+    if((new URL(request.url).pathname.startsWith('/premium-ficha/')||new URL(request.url).pathname.includes('/premium-'))&&(!licensing.check().valid||licensing.check().plan!=='premium'))return new Response('Función Premium. Actualiza tu suscripción.',{status:403});
     if(new URL(request.url).pathname.startsWith('/__pnoa/'))return servePnoaTile(request);
     if(new URL(request.url).pathname.startsWith('/__geo/'))return serveMapTile(request);
-    if(new URL(request.url).hostname==='app'&&new URL(request.url).pathname.startsWith('/__recordings/')){
+    if(new URL(request.url).hostname==='app'&&(new URL(request.url).pathname.startsWith('/__recordings/')||new URL(request.url).pathname.startsWith('/__workspace/'))){
       try{
-        const recording=new URL(request.url).pathname.startsWith('/__recordings/'),name=decodeURIComponent(new URL(request.url).pathname.slice(recording?'/__recordings/'.length:'/__workspace/'.length));if(recording&&(path.basename(name)!==name||!name.toLowerCase().endsWith('.mp4')))return new Response('Archivo no disponible',{status:404});const file=path.join(videoDirectory,name),stat=await fs.promises.lstat(file);if(!stat.isFile())return new Response('Archivo no disponible',{status:404});
+        const recording=new URL(request.url).pathname.startsWith('/__recordings/'),name=decodeURIComponent(new URL(request.url).pathname.slice(recording?'/__recordings/'.length:'/__workspace/'.length));if(recording&&(path.basename(name)!==name||!name.toLowerCase().endsWith('.mp4')))return new Response('Archivo no disponible',{status:404});if(!recording&&(!licensing.check().valid||licensing.check().plan!=='premium'))return new Response('Premium',{status:403});const file=recording?path.join(videoDirectory,name):workspaceFile(name);if(!recording&&!/\.(mp4|mov|m4v|webm)$/i.test(name))return new Response('No disponible',{status:403});const stat=await fs.promises.lstat(file);if(!stat.isFile())return new Response('Archivo no disponible',{status:404});
         const size=stat.size,range=request.headers.get('range');let start=0,end=size-1,status=200;const headers={'Accept-Ranges':'bytes','Content-Type':({'.mp4':'video/mp4','.m4v':'video/mp4','.mov':'video/quicktime','.webm':'video/webm'})[path.extname(file).toLowerCase()]||'application/octet-stream'};
         if(range){const match=/^bytes=(\d*)-(\d*)$/.exec(range);if(!match||(!match[1]&&!match[2]))return new Response(null,{status:416,headers:{'Content-Range':`bytes */${size}`}});start=match[1]?Number(match[1]):Math.max(0,size-Number(match[2]));end=match[1]&&match[2]?Math.min(size-1,Number(match[2])):size-1;if(start>end||start>=size)return new Response(null,{status:416,headers:{'Content-Range':`bytes */${size}`}});status=206;headers['Content-Range']=`bytes ${start}-${end}/${size}`;}
         headers['Content-Length']=String(Math.max(0,end-start+1));const body=request.method==='HEAD'||!size?null:require('node:stream').Readable.toWeb(fs.createReadStream(file,{start,end}),{strategy:{highWaterMark:1024*1024,size:chunk=>chunk.byteLength}});return new Response(body,{status,headers});
@@ -164,7 +183,7 @@ app.whenReady().then(async () => {
     return net.fetch(pathToFileURL(filePath).toString());
   });
   session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback, details) => {
-    callback(permission === 'media' && details.mediaTypes?.includes('audio'));
+    callback((permission === 'media' && details.mediaTypes?.includes('audio'))||(permission==='bluetooth'&&licensing.check().valid&&licensing.check().plan==='premium'&&_webContents.getURL().startsWith('elorrietatrack://app/')));
   });
   await createWindow();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

@@ -44,8 +44,9 @@ async function start() {
   if(window.elorrietaDesktop?.licenseStatus){
     const {default:DesktopLicense}=await import('./DesktopLicense.jsx');
     let status;try{status=await window.elorrietaDesktop.licenseStatus();}catch(e){status={valid:false,error:e.message};}
+    window.elorrietaEntitlement=status.plan||'basic';
     if(!status.valid)await new Promise(resolve=>root.render(<DesktopLicense initial={status} onReady={resolve}/>));
-    setInterval(async()=>{try{const state=await window.elorrietaDesktop.licenseStatus();if(!state.valid){await finishAutosave();root.render(<DesktopLicense initial={state} onReady={()=>location.reload()}/>);}}catch{}},600000);
+    setInterval(async()=>{try{const state=await window.elorrietaDesktop.licenseStatus();window.elorrietaEntitlement=state.plan||'basic';if(state.valid&&state.plan!=='premium'&&window.elorrietaPremiumActive)window.dispatchEvent(new Event('elorrietatrack:basic'));if(!state.valid){await finishAutosave();root.render(<DesktopLicense initial={state} onReady={()=>location.reload()}/>);}}catch{}},600000);
   }
   if (import.meta.env.PROD && 'serviceWorker' in navigator && !window.elorrietaDesktop) navigator.serviceWorker.register('/sw.js').catch(() => {});
 
@@ -58,6 +59,7 @@ async function start() {
     }
     await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='/account-storage.js';script.onload=resolve;script.onerror=reject;document.head.append(script);});
     window.installRutasAccount(user);
+    window.elorrietaEntitlement=user.plan||'basic';
     if(user.loginLanguage)localStorage.setItem('elorrietatrack-language',user.loginLanguage);
     monitorAccount(user);
   }
@@ -78,12 +80,15 @@ async function start() {
   window.addEventListener('beforeunload',event=>{checkpointAutosave();if(!window.elorrietaDesktop&&hasActiveWork()){event.preventDefault();event.returnValue='';}});
   if(!window.elorrietaDesktop)reconnectDataFolder().catch(e=>reportAutosave('error',e.message));
   const openApp = async () => {
-    if(window.elorrietaDesktop?.licenseStatus){const state=await window.elorrietaDesktop.licenseStatus();if(!state.valid){const {default:DesktopLicense}=await import('./DesktopLicense.jsx');root.render(<DesktopLicense initial={state} onReady={()=>window.dispatchEvent(new Event('elorrietatrack:home'))}/>);return;}}
+    if(window.elorrietaDesktop?.licenseStatus){const state=await window.elorrietaDesktop.licenseStatus();window.elorrietaEntitlement=state.plan||'basic';if(!state.valid){const {default:DesktopLicense}=await import('./DesktopLicense.jsx');root.render(<DesktopLicense initial={state} onReady={()=>window.dispatchEvent(new Event('elorrietatrack:home'))}/>);return;}}
+    window.elorrietaPremiumActive=false;
     const { default: App } = await import('./App.jsx');
     root.render(<React.StrictMode><App /></React.StrictMode>);
   };
   let goingHome=false;
   const showHome=async()=>{if(goingHome)return;goingHome=true;try{await finishAutosave();await saveDataFolder();if(window.elorrietaDesktop)await window.elorrietaDesktop.saveLibrary(librarySnapshot());const {default:Welcome}=await import('./Welcome.jsx');root.render(<React.StrictMode><Welcome onEnter={openApp}/></React.StrictMode>);}catch(e){reportAutosave('error',e.message);}finally{goingHome=false;}};
+  window.addEventListener('elorrietatrack:basic',async()=>{await finishAutosave();await openApp();});
+  window.addEventListener('elorrietatrack:premium',async event=>{try{const state=window.elorrietaDesktop?await window.elorrietaDesktop.licenseStatus():(await(await import('./WebAccess.jsx')).accountRequest('me')).user;const allowed=window.elorrietaDesktop?state.valid&&state.plan==='premium':state.plan==='premium'||state.role==='admin';if(!allowed){alert('Función Premium. Actualiza tu suscripción.');return;}window.elorrietaEntitlement='premium';window.elorrietaPremiumActive=true;await finishAutosave();window.elorrietaPremiumFeature=event.detail;localStorage.setItem('elorrietatrack-premium-language',localStorage.getItem('elorrietatrack-language')||'eu');const premiumFolder=await import('./premium/dataFolder.js');if(!window.elorrietaPremiumWatched){premiumFolder.watchDataFolder();window.elorrietaPremiumWatched=true;premiumFolder.reconnectDataFolder().catch(()=>{});}const {registerAutosave}=await import('./autosave.js');registerAutosave('premium-folder',{finish:()=>premiumFolder.saveDataFolder()});const {default:PremiumApp}=await import('./premium/App.jsx');root.render(<div className="premium-workspace"><PremiumApp/></div>);}catch(e){reportAutosave('error',e.message);alert(e.message);}});
   window.addEventListener('elorrietatrack:home',showHome);
   window.addEventListener('message',event=>{if(event.origin===location.origin&&event.data==='elorrietatrack:home')window.dispatchEvent(new Event('elorrietatrack:home'));});
   await showHome();

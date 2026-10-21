@@ -15,7 +15,7 @@ const privateApp=Object.values(manifest).find(entry=>entry.name==='App'&&entry.f
 if(!privateApp||loginAssets.has('/'+privateApp.file))throw Error('La aplicación debe permanecer separada de los archivos públicos de acceso.');
 const json=(value,status=200,headers={})=>Response.json(value,{status,headers:{'Cache-Control':'no-store',...headers}});
 const cookie=(token,expired=false)=>`__Host-elorrietatrack=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${expired?0:604800}`;
-const publicUser=u=>({id:u.id,email:u.email,role:u.role,active:!!u.active,createdAt:u.created_at});
+const publicUser=u=>({id:u.id,email:u.email,role:u.role,plan:u.plan==='premium'?'premium':'basic',active:!!u.active,createdAt:u.created_at});
 async function identity(request,env){
  const token=request.headers.get('Cookie')?.match(/(?:^|;\s*)__Host-elorrietatrack=([^;]+)/)?.[1];
  if(!token)return null;
@@ -61,12 +61,12 @@ async function api(request,env,path){
   if(u.role!=='admin')return json({error:'Acceso reservado al administrador.'},403);
   if(path.startsWith('/api/admin/licenses'))return adminLicenses(request,env,path,json);
   if(path==='/api/admin/users'&&request.method==='GET'){
-   const {results}=await env.AUTH.prepare('SELECT id,email,role,active,created_at FROM users ORDER BY created_at').all();return json({users:results.map(publicUser)});
+   const {results}=await env.AUTH.prepare('SELECT id,email,role,plan,active,created_at FROM users ORDER BY created_at').all();return json({users:results.map(publicUser)});
   }
   if(path==='/api/admin/users'&&request.method==='POST'){
    const b=await body(request),email=b.email?.trim().toLowerCase();if(!validEmail(email)||!validPassword(b.password))return json({error:'Introduce un correo válido y una contraseña o PIN de al menos 8 caracteres.'},400);
    const id=crypto.randomUUID(),hash=await passwordHash(b.password);
-   const r=await env.AUTH.prepare('INSERT OR IGNORE INTO users(id,email,password_hash,created_at) VALUES(?,?,?,?)').bind(id,email,hash,Date.now()).run();
+   const r=await env.AUTH.prepare('INSERT OR IGNORE INTO users(id,email,password_hash,created_at,plan) VALUES(?,?,?,?,?)').bind(id,email,hash,Date.now(),b.plan==='premium'?'premium':'basic').run();
    if(!r.meta.changes)return json({error:'Ese correo ya tiene una cuenta.'},409);
    return json({ok:true},201);
   }
@@ -78,7 +78,8 @@ async function api(request,env,path){
    if(request.method==='DELETE')await env.AUTH.batch([env.AUTH.prepare('DELETE FROM sessions WHERE user_id=?').bind(target.id),env.AUTH.prepare('DELETE FROM users WHERE id=?').bind(target.id)]);
    else {
     const b=await body(request);let statement;
-    if(typeof b.active==='boolean')statement=env.AUTH.prepare('UPDATE users SET active=? WHERE id=?').bind(b.active?1:0,target.id);
+    if(['basic','premium'].includes(b.plan))statement=env.AUTH.prepare('UPDATE users SET plan=? WHERE id=?').bind(b.plan,target.id);
+    else if(typeof b.active==='boolean')statement=env.AUTH.prepare('UPDATE users SET active=? WHERE id=?').bind(b.active?1:0,target.id);
     else if(validPassword(b.password))statement=env.AUTH.prepare('UPDATE users SET password_hash=? WHERE id=?').bind(await passwordHash(b.password),target.id);
     else return json({error:'Introduce una contraseña o PIN de al menos 8 caracteres.'},400);
     await env.AUTH.batch([statement,env.AUTH.prepare('DELETE FROM sessions WHERE user_id=?').bind(target.id)]);
@@ -95,6 +96,8 @@ export default {async fetch(request,env){
   // The entry and login assets are public; application code require a session.
   const publicPath=path.startsWith('/fonts/')||['/','/index.html','/sw.js','/account-storage.js','/manual.html','/manual','/licencia.html','/licencia','/LICENSE.txt','/THIRD-PARTY-NOTICES.txt'].includes(path)||loginAssets.has(path)||['/ad-mobility-logo.png','/elorrieta-logo.svg','/favicon.png'].includes(path);
   const u=publicPath?null:await identity(request,env);
+  if((path==='/premium-ficha'||path.startsWith('/premium-ficha/'))&&request.headers.get('Sec-Fetch-Dest')==='document')return new Response('Abre Alumnos desde la aplicación.',{status:403});
+  if(path.includes('/premium-')&&(!u||(u.role!=='admin'&&u.plan!=='premium')))return new Response('Función Premium. Actualiza tu suscripción.',{status:403,headers:{'Cache-Control':'no-store'}});
   if(!publicPath&&!u)return new Response('Inicia sesión en ElorrietaTrack.',{status:401,headers:{'Cache-Control':'no-store'}});
   let response=await env.ASSETS.fetch(request);
   const headers=new Headers(response.headers);headers.set('Cache-Control','no-store');headers.set('X-Content-Type-Options','nosniff');headers.set('Referrer-Policy','strict-origin-when-cross-origin');headers.set('X-Frame-Options','SAMEORIGIN');

@@ -1,3 +1,4 @@
+import PremiumTools from './PremiumTools.jsx';
 import {loadVideoWatermark,drawVideoWatermark} from './videoWatermark.js';
 import {drawVideoCredits} from './mapCredits.js';
 import {rasterExportCredit} from './mapTiles.js';
@@ -1993,7 +1994,7 @@ export default function App() {
       showLibrary();
     }} onBeforeExport={flushBackup} onBeforeRestore={() => clearTimeout(librarySaveTimer.current)} />}
     <section className="workspace">
-      <aside className="sidebar">
+      <aside className="sidebar"><section className="premium-tools-card"><strong>Premium</strong><PremiumTools language={language}/></section>
         <label className="app-language">Hizkuntza / Idioma<select aria-label="Hizkuntza / Idioma" value={language} onChange={e => setLanguage(e.target.value)}><option value="eu">Euskara</option><option value="es">Castellano</option></select></label><div className="panel-heading"><div><p className="eyebrow">{t("PROIEKTUA", "PROYECTO")}</p><h1 title={currentProject.name}>{currentProject.name}</h1></div><div className="project-actions"><button className="add-route" title="Crear proyecto" onClick={createProject}>+</button><button className="more-button" title="Cambiar nombre" onClick={renameProject}>···</button></div></div>
         {projectState.projects.length > 1 && <div className="project-switcher"><span className="eyebrow">{t("PROIEKTUA ALDATU", "CAMBIAR PROYECTO")}</span><select aria-label="Seleccionar proyecto" value={currentProject.id} onChange={event => switchProject(event.target.value)}>{projectState.projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}</select></div>}
         <div className="location-chip"><span className="pin-icon">⌖</span><div><strong>Bizkaia, Euskadi</strong><small>Vista inicial · mapa real</small></div><span className="chip-live">LIVE</span></div>{<>

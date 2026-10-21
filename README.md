@@ -12,13 +12,13 @@ Edición educativa independiente de RutasAD, creada por **Aitor Delgado Martíne
 - Autoguardado y recuperación; copias JSON con vista previa y conservar/actualizar; carpeta de datos en Chrome.
 - Euskera predeterminado y castellano seleccionable.
 
-No incluye alumnado, fichas/clases, GPX/PIP, RaceBox, Google Maps ni Mapbox. No se empaquetan sus SDK ni credenciales.
+El plan Premium añade alumnos, fichas/clases, GPX con vídeo PIP y montaje MP4, recorte a pizarra y RaceBox Mini/Mini S. El plan básico conserva las funciones anteriores y muestra aviso de actualización. No incluye Google Maps ni Mapbox. [Planes, licencias y dominio futuro](docs/PREMIUM-Y-DOMINIO.md).
 
 ## Independencia
 
 Repositorio, aplicación, protocolo nativo, cookies, almacenamiento del navegador y carpetas son propios. No migra ni modifica datos de RutasAD. Las copias JSON son específicas de esta edición; los vídeos se guardan por separado.
 
-Escritorio: `Documentos/ElorrietaTrack/`, con `Biblioteca de recorridos.json`, `Vídeos MP4`, `Exportaciones`, `App/Copias de seguridad` y perfil interno `.datos-de-la-aplicacion`.
+Escritorio: `Documentos/ElorrietaTrack/`, con `Biblioteca de recorridos.json`, `Vídeos MP4`, `Archivos GPX`, `Exportaciones`, `App/Copias de seguridad` y perfil interno `.datos-de-la-aplicacion`.
 
 ## Desarrollo e instalación
 
@@ -26,12 +26,12 @@ Requiere Node.js compatible con Vite 6 y Electron 44.
 
 ```sh
 npm ci
-npm run dev -- --port 5174
+npm run dev -- --port 5176
 npm run build
 npm run package:win
 ```
 
-Windows: `release/ElorrietaTrack-1.2.1-Windows-x64-Setup.exe`. El EXE no está firmado; hay que probarlo en los equipos del centro antes de entregarlo. No se promete compatibilidad con cualquier versión antigua de Windows.
+Windows: `release/ElorrietaTrack-1.3.0-Windows-x64-Setup.exe`. El EXE no está firmado; hay que probarlo en los equipos del centro antes de entregarlo. No se promete compatibilidad con cualquier versión antigua de Windows.
 
 Vite es para pruebas locales sin identificación. La web de producción conserva administración propia y requiere una base D1 nueva y su administrador antes de publicarse: [configuración](server/README.md). No contiene contraseñas reales ni identificadores de la base de RutasAD.
 
@@ -64,3 +64,6 @@ Los mapas de las pruebas son imágenes sintéticas locales; no se sobrecargan se
 Manual integrado Euskara/Castellano, disponible sin conexión e imprimible como PDF. Contacto: admobility26@gmail.com. El logo regresa al inicio tras guardar/finalizar el trabajo.
 
 La revisión de licencias, inventario y límites se documenta en [legal/REVISION-COMERCIAL.md](legal/REVISION-COMERCIAL.md). El uso comercial del logo EEM requiere autorización de su titular; los avisos de autoría no la sustituyen. Las dependencias y los mapas mantienen sus propias licencias; la autorización de uso profesional de la app no concede derechos sobre ellos.
+
+## Actualización 1.3
+Antes de publicar sobre una base existente, aplicar una sola vez `server/premium.sql`. Conserva usuarios y licencias como básicos; el administrador puede cambiar su plan. No regenerar las claves de firma. Bibliotecas básica y Premium separadas y copias propias. Para pruebas de navegador inicia Vite en 5176 (o define TEST_URL). Pruebas: `npm test`, `npm run test:recording`, `npm run test:licensing`, `npm run test:premium`. Se añade la guía de conexión de dominio sin contratarlo todavía; conserva workers.dev.

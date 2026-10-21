@@ -7,7 +7,7 @@ const browser=await chromium.launch();try{
   localStorage.setItem('point-test-seeded','1');localStorage.setItem('elorrietatrack-language','es');
   localStorage.setItem('elorrietatrack-projects',JSON.stringify({activeProjectId:'test-points',projects:[{id:'test-points',name:'Test points'}]}));
   localStorage.setItem('elorrietatrack-project-test-points',JSON.stringify([{id:'route-test',name:'Trayectoria A',color:'#e36b4d',points:[[-2.93,43.26],[-2.931,43.261],[-2.932,43.262]]}]));
- });await installMapFixtures(page);await page.goto('http://127.0.0.1:5174');await page.getByRole('button',{name:'Entrar en la aplicación'}).click();
+ });await installMapFixtures(page);await page.goto((process.env.TEST_URL||'http://127.0.0.1:5176'));await page.getByRole('button',{name:'Entrar en la aplicación'}).click();
  const editor=page.locator('.trajectory-point-editor'),select=editor.getByLabel('Punto del itinerario');
  const points=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('elorrietatrack-project-test-points'))[0].points);
  await select.selectOption('1');await editor.getByRole('button',{name:'↑ Adelantar'}).click();assert.deepEqual(await points(),[[-2.931,43.261],[-2.93,43.26],[-2.932,43.262]]);

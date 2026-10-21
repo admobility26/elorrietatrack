@@ -1,5 +1,45 @@
 [
   {
+    "name": "@capacitor-community/bluetooth-le",
+    "version": "8.3.0",
+    "license": "MIT",
+    "files": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@capacitor/core",
+    "version": "8.5.3",
+    "license": "MIT",
+    "files": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@capacitor/filesystem",
+    "version": "8.1.5",
+    "license": "MIT",
+    "files": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@capacitor/share",
+    "version": "8.0.3",
+    "license": "MIT",
+    "files": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@capacitor/synapse",
+    "version": "1.0.4",
+    "license": "ISC",
+    "files": [
+      "LICENSE.md"
+    ]
+  },
+  {
     "name": "@mapbox/jsonlint-lines-primitives",
     "version": "2.0.3",
     "license": "MIT",
@@ -74,6 +114,14 @@
   {
     "name": "@types/geojson",
     "version": "7946.0.16",
+    "license": "MIT",
+    "files": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/web-bluetooth",
+    "version": "0.0.20",
     "license": "MIT",
     "files": [
       "LICENSE"
@@ -221,6 +269,14 @@
     "license": "ISC",
     "files": [
       "LICENSE"
+    ]
+  },
+  {
+    "name": "tslib",
+    "version": "2.8.1",
+    "license": "0BSD",
+    "files": [
+      "LICENSE.txt"
     ]
   }
 ]

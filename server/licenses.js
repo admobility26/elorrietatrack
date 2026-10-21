@@ -3,16 +3,19 @@ const DAY=86400000;
 // Prefix, case, whitespace and common hyphen separators are presentation only.
 export function normalizeLicenseKey(value){
  if(typeof value!=='string')return null;
- const compact=value.toUpperCase().replace(/[\s\u200B-\u200D\uFEFF\-\u2010-\u2015\u2212]/g,'').replace(/^EEM/,'');
- return /^[A-F0-9]{32}$/.test(compact)?'EEM-'+compact:null;
+ const compact=value.toUpperCase().replace(/[\s\u200B-\u200D\uFEFF\-\u2010-\u2015\u2212]/g,'');
+ const tier=compact.startsWith('PRE')?'PRE':'EEM';
+ const token=compact.replace(/^(EEM|PRE)/,'');
+ return /^[A-F0-9]{32}$/.test(token)?tier+'-'+token:null;
 }
 export async function licenseAPI(request,env,path,json){
  const raw=await request.text();if(raw.length>4096)return json({error:'Solicitud demasiado grande.'},413);const b=JSON.parse(raw);
  if(path==='/api/license/activate'){
   if(typeof b.key!=='string'||b.key.length>100||!b.device||b.device.length!==64||typeof b.publicKey!=='string'||b.publicKey.length>1000)return json({error:'Datos de activación incorrectos.'},400);
   const normalized=normalizeLicenseKey(b.key);
-  if(!normalized)return json({error:'La clave debe contener 32 letras y números. Copia la clave completa; el prefijo EEM- es opcional.'},400);
-  const keyHash=await digest(normalized);
+  if(!normalized)return json({error:'La clave debe contener 32 letras y números. Copia la clave completa; los prefijos EEM- y PRE- son opcionales.'},400);
+  let keyHash=await digest(normalized);
+  if(!/^\s*(EEM|PRE)/i.test(b.key)&&normalized.startsWith('EEM-')){const present=await env.AUTH.prepare('SELECT id FROM licenses WHERE key_hash=?').bind(keyHash).first();if(!present)keyHash=await digest('PRE-'+normalized.slice(4));}
   // A consumed key can never activate again, including on the same device.
   const r=await env.AUTH.prepare('UPDATE licenses SET device=?,public_key=?,activated_at=? WHERE key_hash=? AND device IS NULL AND active=1 AND expires_at>? RETURNING *').bind(b.device,b.publicKey,Date.now(),keyHash,Date.now()).first();
   if(!r){
@@ -39,25 +42,27 @@ export async function licenseAPI(request,env,path,json){
  return json({error:'No encontrado.'},404);
 }
 async function issue(r,env,json){
- const now=Date.now(),payload=JSON.stringify({id:r.id,label:r.label,device:r.device,publicKey:r.public_key,expiresAt:r.expires_at,issuedAt:now,offlineUntil:Math.min(r.expires_at,now+30*DAY)});
+ const now=Date.now(),payload=JSON.stringify({id:r.id,label:r.label,device:r.device,publicKey:r.public_key,plan:r.plan==='premium'?'premium':'basic',apiBase:env.PUBLIC_ORIGIN||new URL('https://elorrietatrack.promociones7819.workers.dev').origin,expiresAt:r.expires_at,issuedAt:now,offlineUntil:Math.min(r.expires_at,now+30*DAY)});
  const key=await crypto.subtle.importKey('jwk',JSON.parse(env.LICENSE_PRIVATE_JWK),{name:'Ed25519'},false,['sign']);
  const signature=await crypto.subtle.sign('Ed25519',key,new TextEncoder().encode(payload));
  return json({payload,signature:btoa(String.fromCharCode(...new Uint8Array(signature)))});
 }
 export async function adminLicenses(request,env,path,json){
  if(path==='/api/admin/licenses'&&request.method==='GET'){
-  const {results}=await env.AUTH.prepare('SELECT id,label,expires_at,active,activated_at,created_at FROM licenses ORDER BY created_at DESC').all();return json({licenses:results});
+  const {results}=await env.AUTH.prepare('SELECT id,label,plan,expires_at,active,activated_at,created_at FROM licenses ORDER BY created_at DESC').all();return json({licenses:results});
  }
  const b=await request.json();
  if(path==='/api/admin/licenses'&&request.method==='POST'){
   if(typeof b.label!=='string'||!b.label.trim()||b.label.length>150||!Number.isSafeInteger(b.expiresAt)||b.expiresAt<=Date.now())return json({error:'Indica un nombre y una fecha futura.'},400);
-  const key='EEM-'+crypto.randomUUID().replaceAll('-','').toUpperCase(),id=crypto.randomUUID();
-  await env.AUTH.prepare('INSERT INTO licenses(id,key_hash,label,expires_at,created_at) VALUES(?,?,?,?,?)').bind(id,await digest(key),b.label.trim(),b.expiresAt,Date.now()).run();
+  const plan=b.plan==='premium'?'premium':'basic';
+  const key=(plan==='premium'?'PRE-':'EEM-')+crypto.randomUUID().replaceAll('-','').toUpperCase(),id=crypto.randomUUID();
+  await env.AUTH.prepare('INSERT INTO licenses(id,key_hash,label,expires_at,created_at,plan) VALUES(?,?,?,?,?,?)').bind(id,await digest(key),b.label.trim(),b.expiresAt,Date.now(),plan).run();
   return json({key,id},201);
  }
  const id=path.match(/^\/api\/admin\/licenses\/([a-f0-9-]+)$/)?.[1];
  if(id&&request.method==='PATCH'){
-  if(typeof b.active==='boolean')await env.AUTH.prepare('UPDATE licenses SET active=? WHERE id=?').bind(b.active?1:0,id).run();
+  if(['basic','premium'].includes(b.plan))await env.AUTH.prepare('UPDATE licenses SET plan=? WHERE id=?').bind(b.plan,id).run();
+  else if(typeof b.active==='boolean')await env.AUTH.prepare('UPDATE licenses SET active=? WHERE id=?').bind(b.active?1:0,id).run();
   else if(Number.isSafeInteger(b.expiresAt)&&b.expiresAt>Date.now())await env.AUTH.prepare('UPDATE licenses SET expires_at=? WHERE id=?').bind(b.expiresAt,id).run();
   else return json({error:'Fecha incorrecta.'},400);
   return json({ok:true});

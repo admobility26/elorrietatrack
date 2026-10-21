@@ -2,7 +2,7 @@
 Fecha: 21/10/2026. Autor original: Aitor Delgado Martínez · AD Mobility.
 
 ## Código y distribución
-Se inventariaron las 28 dependencias de ejecución de package-lock.json. Sus licencias declaradas son MIT, ISC, BSD-2-Clause, BSD-3-Clause y MIT OR Apache-2.0. Se conservan los textos originales y sus avisos; `murmurhash-js` guarda su licencia MIT en README y ahora también se recoge. El inventario está en `dependency-inventory.json`. No se extiende a ellas la restricción no comercial propia.
+Se inventariaron las dependencias de ejecución de package-lock.json. Sus licencias declaradas son MIT, ISC, BSD-2-Clause, BSD-3-Clause y MIT OR Apache-2.0. Se conservan los textos originales y sus avisos; `murmurhash-js` guarda su licencia MIT en README y ahora también se recoge. El inventario está en `dependency-inventory.json`. No se extiende a ellas la restricción no comercial propia.
 
 Se comparó byte a byte el bundle PDF con pdf-lib 1.17.1 del registro npm, verificando SHA-512 del tarball. Se recopilaron licencias de pdf-lib, @pdf-lib/standard-fonts 1.0.0, @pdf-lib/upng 1.0.1, pako 1.0.11 y tslib 1.11.1. Los avisos Apache de Microsoft incrustados se mantienen. Las tipografías DM Sans, DM Mono y Manrope se distribuyen sin modificación con sus textos SIL OFL 1.1, desde el repositorio oficial google/fonts. Ya no se solicitan fuentes a Google al abrir la app.
 
@@ -23,3 +23,6 @@ El logo EEM fue suministrado por el promotor; no hay autorización comercial de 
 La app no incorpora imágenes externas de señales DGT: los símbolos y vehículos se construyen en SVG/canvas en su código. No se anuncia homologación ni respaldo DGT. El usuario conserva responsabilidad sobre los derechos de las voces, vídeos y demás contenido que aporte.
 
 Esta revisión técnica documental no es dictamen jurídico ni garantía de cumplimiento de toda ley. Antes de venta a terceros, revisar contrato, marca autorizada y obligaciones de privacidad e imagen según el uso real.
+
+## Ampliación Premium 1.3
+Se han añadido los módulos de Capacitor y la integración de FichaAutoescuela. El inventario generado recoge las licencias adicionales. Los PDF de formularios del módulo de alumnos conservan su procedencia en public/premium-ficha/SOURCE.md; no se atribuyen a AD Mobility. La revisión anterior de símbolos SVG no comprende la autorización de estos formularios oficiales para cada explotación comercial.

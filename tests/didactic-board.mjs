@@ -11,7 +11,7 @@ try{
   localStorage.setItem('elorrietatrack-project-board-test',JSON.stringify([{id:'original-route',name:'Trayectoria original',color:'#e36b4d',points:[[-2.935,43.263],[-2.934,43.264]],narration:'Conservar explicación'}]));localStorage.setItem('elorrietatrack-project-board-test-markers','[]');
   navigator.mediaDevices.getUserMedia=()=>{window.boardMicrophoneCalled=true;throw Error('The board must not access the microphone');};const NativeRecorder=window.MediaRecorder;window.MediaRecorder=class extends NativeRecorder{constructor(...args){window.boardRecorderCalled=true;super(...args);}};
  });
- await installMapFixtures(page);await page.goto('http://127.0.0.1:5174');await page.getByRole('button',{name:'Entrar en la aplicación'}).click();
+ await installMapFixtures(page);await page.goto((process.env.TEST_URL||'http://127.0.0.1:5176'));await page.getByRole('button',{name:'Entrar en la aplicación'}).click();
  const launch=page.getByRole('button',{name:'Pizarra didáctica',exact:false});await launch.waitFor();await page.getByRole('button',{name:'Enfocar',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.pizarra-launch').disabled);await page.waitForTimeout(1000);
  const snapshot=()=>page.evaluate(async()=>({storage:Object.fromEntries(Object.keys(localStorage).filter(k=>k.startsWith('elorrietatrack-')&&!k.startsWith('elorrietatrack-autosave-')&&k!=='elorrietatrack-board-autosave').map(k=>[k,localStorage.getItem(k)]))}));
  const before=await snapshot();await launch.click();const board=page.getByRole('dialog',{name:'Pizarra didáctica',exact:true});await board.waitFor();await board.getByRole('status').filter({hasText:'Señala sobre el mapa'}).waitFor();

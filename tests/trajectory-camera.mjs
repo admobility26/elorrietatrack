@@ -2,7 +2,7 @@ import {installMapFixtures} from './map-fixtures.mjs';
 import {chromium} from '@playwright/test';import assert from 'node:assert/strict';
 const browser=await chromium.launch();try{
  const page=await browser.newPage();await page.addInitScript(()=>{localStorage.setItem('elorrietatrack-language','es');localStorage.setItem('elorrietatrack-projects',JSON.stringify({activeProjectId:'camera-test',projects:[{id:'camera-test',name:'Camera test'}]}));localStorage.setItem('elorrietatrack-project-camera-test',JSON.stringify([{id:'route-camera',name:'Trajectory',color:'#e36b4d',points:[]}]));});
- await installMapFixtures(page);await page.goto('http://127.0.0.1:5174');await page.getByRole('button',{name:'Entrar en la aplicación'}).click();await page.locator('.map-canvas canvas').waitFor();await page.getByRole('button',{name:'+ Añadir puntos',exact:true}).click();
+ await installMapFixtures(page);await page.goto((process.env.TEST_URL||'http://127.0.0.1:5176'));await page.getByRole('button',{name:'Entrar en la aplicación'}).click();await page.locator('.map-canvas canvas').waitFor();await page.getByRole('button',{name:'+ Añadir puntos',exact:true}).click();
  const map=page.locator('.map-canvas');for(const x of [200,350,500]){await map.click({position:{x,y:220}});await page.waitForTimeout(850);}
  const points=await page.evaluate(()=>JSON.parse(localStorage.getItem('elorrietatrack-project-camera-test'))[0].points);assert.equal(points.length,3);assert.ok(Math.abs(points[0][1]-points[1][1])<1e-7);assert.ok(Math.abs(points[1][1]-points[2][1])<1e-7);assert.ok(Math.abs((points[1][0]-points[0][0])-(points[2][0]-points[1][0]))<1e-7);
  // Selecting and reordering must also preserve the same pixel-to-coordinate mapping.
