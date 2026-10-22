@@ -40,8 +40,8 @@
     "electron@44.7.0": true
   },
   "build": {
-    "appId": "com.admobility.elorrietatrack",
-    "productName": "ElorrietaTrack",
+    "appId": "com.admobility26.elorrietatrack",
+    "productName": "ElorrietaTrack Estable",
     "asar": true,
     "directories": {
       "output": "release",

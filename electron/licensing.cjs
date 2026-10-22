@@ -1,5 +1,5 @@
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),{execFileSync}=require('node:child_process');
-const BASE='https://pendiente.invalid';
+const BASE='https://elorrietatrack.admobility26.workers.dev';
 const PUBLIC=crypto.createPublicKey({key:require('./license-public.json'),format:'jwk'});
 module.exports=function({app,safeStorage}){
  const file=path.join(app.getPath('userData'),'license.json');let state;

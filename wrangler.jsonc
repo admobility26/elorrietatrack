@@ -17,5 +17,8 @@
       "database_id": "2c770bdc-780c-4dfe-b3a9-43a82991aac0"
     }
   ],
-  "account_id": "a42daa5d5844f10ca43694aaba7ff82b"
+  "account_id": "a42daa5d5844f10ca43694aaba7ff82b",
+  "vars": {
+    "PUBLIC_ORIGIN": "https://elorrietatrack.admobility26.workers.dev"
+  }
 }
