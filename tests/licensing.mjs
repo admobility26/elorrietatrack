@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';import {DatabaseSync} from 'node:sqlite';import crypto from 'node:crypto';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import vm from 'node:vm';import {createRequire} from 'node:module';import {licenseAPI,adminLicenses,normalizeLicenseKey} from '../server/licenses.js';
 for(const k of ['eem-0123456789abcdef0123456789abcdef','0123456789ABCDEF0123456789ABCDEF',' EEM–01234567 89abcdef 01234567 89abcdef\n'])assert.equal(normalizeLicenseKey(k),'EEM-0123456789ABCDEF0123456789ABCDEF');
 for(const k of ['',null,'wrong','0'.repeat(31),'0'.repeat(33)])assert.equal(normalizeLicenseKey(k),null);
-const db=new DatabaseSync(':memory:');db.exec(fs.readFileSync('server/schema.sql','utf8'));db.exec(fs.readFileSync('server/licenses.sql','utf8'));db.exec(fs.readFileSync('server/premium.sql','utf8'));db.exec(fs.readFileSync('server/license-register.sql','utf8'));
+const db=new DatabaseSync(':memory:');db.exec(fs.readFileSync('server/schema.sql','utf8'));db.exec(fs.readFileSync('server/licenses.sql','utf8'));db.exec(fs.readFileSync('server/premium.sql','utf8'));db.exec(fs.readFileSync('server/license-register.sql','utf8'));db.exec(fs.readFileSync('server/admin-licenses.sql','utf8'));
 const AUTH={prepare(sql){return {bind(...args){const s=db.prepare(sql);return {first:async()=>s.get(...args),all:async()=>({results:s.all(...args)}),run:async()=>({meta:s.run(...args)})};},all:async()=>({results:db.prepare(sql).all()})};}};
 const keys=crypto.generateKeyPairSync('ed25519'),env={AUTH,LICENSE_PRIVATE_JWK:JSON.stringify(keys.privateKey.export({format:'jwk'}))};const json=(v,status=200)=>Response.json(v,{status});
 const req=(data,method='POST')=>new Request('https://test.invalid',{method,body:JSON.stringify(data)});
@@ -16,6 +16,24 @@ assert.equal((await refresh({signature:'wrong'})).status,403);assert.equal((awai
 const time=Date.now(),nonce=crypto.randomUUID(),signature=crypto.sign(null,Buffer.from(JSON.stringify([id,time,nonce])),pair.privateKey).toString('base64');assert.equal((await refresh({time,nonce,signature})).status,200);assert.equal((await refresh({time,nonce,signature})).status,409);
 db.prepare('UPDATE licenses SET active=0 WHERE id=?').run(id);assert.equal((await refresh()).status,403);db.prepare('UPDATE licenses SET active=1,expires_at=? WHERE id=?').run(Date.now()-1,id);assert.equal((await refresh()).status,403);await adminLicenses(req({expiresAt:Date.now()+90*86400000},'PATCH'),env,'/api/admin/licenses/'+id,json);assert.equal((await refresh()).status,200);assert.equal((await licenseAPI(req({key,device,publicKey}),env,'/api/license/activate',json)).status,409);
 await adminLicenses(req({plan:'premium'},'PATCH'),env,'/api/admin/licenses/'+id,json);assert.equal(JSON.parse((await (await refresh()).json()).payload).plan,'premium');await adminLicenses(req({plan:'basic'},'PATCH'),env,'/api/admin/licenses/'+id,json);assert.equal(JSON.parse((await (await refresh()).json()).payload).plan,'basic');assert.equal((await licenseAPI(req({key,device,publicKey}),env,'/api/license/activate',json)).status,409);
+// ADMIN: immutable perpetual Premium grant, reusable across independent device identities.
+const createdAdmin=await adminLicenses(req({label:'ADMIN TEST',kind:'admin'}),env,'/api/admin/licenses',json);assert.equal(createdAdmin.status,201);const adminGrant=await createdAdmin.json();assert(adminGrant.key.startsWith('ADMIN-'));assert.equal(normalizeLicenseKey(adminGrant.key.toLowerCase()),adminGrant.key);
+const adminPairs=[pair,crypto.generateKeyPairSync('ed25519'),crypto.generateKeyPairSync('ed25519')],adminReceipts=[];
+for(let i=0;i<adminPairs.length;i++){
+ const result=await licenseAPI(req({key:adminGrant.key,device:String(i+4).repeat(64),publicKey:JSON.stringify(adminPairs[i].publicKey.export({format:'jwk'}))}),env,'/api/license/activate',json);assert.equal(result.status,200);const signed=await result.json();assert(crypto.verify(null,Buffer.from(signed.payload),keys.publicKey,Buffer.from(signed.signature,'base64')));const p=JSON.parse(signed.payload);assert.equal(p.plan,'premium');assert.equal(p.licenseKind,'admin');assert.equal(p.expiresAt,8640000000000000);adminReceipts.push(p);
+}
+assert.equal(new Set(adminReceipts.map(p=>p.id)).size,3);
+assert.equal((await licenseAPI(req({key:adminGrant.key,device:'4'.repeat(64),publicKey}),env,'/api/license/activate',json)).status,200);
+assert.equal((await licenseAPI(req({key:adminGrant.key.slice(6),device,publicKey}),env,'/api/license/activate',json)).status,409);
+async function adminRefresh(i,signer=i){const id=adminReceipts[i].id,time=Date.now(),nonce=crypto.randomUUID(),signature=crypto.sign(null,Buffer.from(JSON.stringify([id,time,nonce])),adminPairs[signer].privateKey).toString('base64');return licenseAPI(req({id,time,nonce,signature}),env,'/api/license/refresh',json);}
+assert.equal((await adminRefresh(0)).status,200);assert.equal((await adminRefresh(0,1)).status,403);
+assert.equal((await adminLicenses(req({plan:'basic'},'PATCH'),env,'/api/admin/licenses/'+adminGrant.id,json)).status,400);
+assert.equal((await adminLicenses(req({expiresAt:Date.now()+86400000},'PATCH'),env,'/api/admin/licenses/'+adminGrant.id,json)).status,400);
+await adminLicenses(req({active:false},'PATCH'),env,'/api/admin/licenses/'+adminGrant.id,json);for(let i=0;i<3;i++)assert.equal((await adminRefresh(i)).status,403);
+assert.equal((await licenseAPI(req({key:adminGrant.key,device,publicKey}),env,'/api/license/activate',json)).status,403);
+await adminLicenses(req({active:true},'PATCH'),env,'/api/admin/licenses/'+adminGrant.id,json);assert.equal((await adminRefresh(2)).status,200);
+list=await (await adminLicenses(new Request('https://test.invalid'),env,'/api/admin/licenses',json)).json();assert.equal(list.licenses.find(l=>l.id===adminGrant.id).activation_count,3);
+console.log('PASS ADMIN: reusable multi-device key, distinct signed activations, perpetual Premium, wrong-device rejection, immutable type, parent blocking and unblocking.');
 // Execute the real desktop verifier with an isolated profile and test trust key only in this VM.
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'eem-license-')),require=createRequire(import.meta.url),source=fs.readFileSync('electron/licensing.cjs','utf8'),module={exports:{}};const fakeRequire=name=>name==='./license-public.json'?keys.publicKey.export({format:'jwk'}):name==='node:child_process'?{execFileSync:()=> '"IOPlatformUUID" = "TEST-MACHINE"\nMachineGuid REG_SZ TEST-MACHINE'}:require(name);
 const realFetch=globalThis.fetch;let offline=false;const fetchMock=async(url,options)=>{if(offline)throw Error('offline');return licenseAPI(req(JSON.parse(options.body)),env,new URL(url).pathname,json);};
@@ -25,5 +43,6 @@ try{
  const file=path.join(dir,'license.json'),state=JSON.parse(fs.readFileSync(file));state.receipt.payload=state.receipt.payload.replace('DESKTOP TEST','TAMPERED');fs.writeFileSync(file,JSON.stringify(state));
  const m2={exports:{}};vm.runInNewContext(source,{require:fakeRequire,module:m2,Buffer,process:{platform:'darwin'},fetch:fetchMock,AbortSignal,Date,console});const bad=m2.exports({app:{getPath:()=>dir},safeStorage:{}});assert.equal(bad.check().valid,false);
  offline=false;db.prepare('UPDATE licenses SET active=0 WHERE id=?').run(second.id);assert.equal((await licensing.status()).valid,false);offline=true;assert.equal((await licensing.status()).valid,false);offline=false;db.prepare('UPDATE licenses SET active=1,expires_at=? WHERE id=?').run(Date.now()+90*86400000,second.id);assert.equal((await licensing.status()).valid,true);
+ assert.equal((await licensing.activate(adminGrant.key)).valid,true);assert.equal(licensing.check().plan,'premium');assert.equal(licensing.check().expiresAt,8640000000000000);
  console.log('PASS licensing: atomic one-use activation, prefixless/case normalization, signature, replay/wrong-device rejection, expiry, renewal, blocked/offline cache and tamper rejection.');
 }finally{fs.rmSync(dir,{recursive:true,force:true});db.close();}
