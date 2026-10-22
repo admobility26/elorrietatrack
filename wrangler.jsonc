@@ -1,5 +1,5 @@
 {
-  "name": "elorrietatrack-estable",
+  "name": "elorrietatrack",
   "compatibility_date": "2026-10-20",
   "assets": {
     "directory": "./dist",
@@ -14,8 +14,8 @@
     {
       "binding": "AUTH",
       "database_name": "elorrietatrack-estable-auth",
-      "database_id": "PENDIENTE_NUEVA_BASE_DE_DATOS"
+      "database_id": "2c770bdc-780c-4dfe-b3a9-43a82991aac0"
     }
   ],
-  "account_id": "PENDIENTE_NUEVA_CUENTA"
+  "account_id": "a42daa5d5844f10ca43694aaba7ff82b"
 }
