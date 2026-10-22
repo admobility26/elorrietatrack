@@ -34,3 +34,6 @@ CREATE TABLE IF NOT EXISTS license_activations (
  UNIQUE(license_id,device,public_key)
 );
 CREATE INDEX IF NOT EXISTS license_activations_parent ON license_activations(license_id);
+
+-- One-time additive migration. Administrative reference, independent of hardware binding.
+ALTER TABLE licenses ADD COLUMN pc_identifier TEXT NOT NULL DEFAULT '';

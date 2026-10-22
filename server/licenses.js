@@ -66,16 +66,18 @@ async function issue(r,env,json){
 }
 export async function adminLicenses(request,env,path,json){
  if(path==='/api/admin/licenses'&&request.method==='GET'){
-  const {results}=await env.AUTH.prepare('SELECT id,label,owner_email,key_ciphertext,plan,license_kind,expires_at,active,activated_at,created_at,(SELECT COUNT(DISTINCT device) FROM license_activations WHERE license_id=licenses.id) AS activation_count FROM licenses ORDER BY created_at DESC').all();return json({licenses:await Promise.all(results.map(async({key_ciphertext,...row})=>({...row,key:await unseal(key_ciphertext,env,row.id)})))});
+  const {results}=await env.AUTH.prepare('SELECT id,label,owner_email,key_ciphertext,plan,license_kind,pc_identifier,expires_at,active,activated_at,created_at,(SELECT COUNT(DISTINCT device) FROM license_activations WHERE license_id=licenses.id) AS activation_count FROM licenses ORDER BY created_at DESC').all();return json({licenses:await Promise.all(results.map(async({key_ciphertext,...row})=>({...row,key:await unseal(key_ciphertext,env,row.id)})))});
  }
  const b=await request.json();
+ if(b.expiresAt==='00-00-0000')b.expiresAt=FOREVER;
+ if(b.pcIdentifier!==undefined&&(typeof b.pcIdentifier!=='string'||b.pcIdentifier.length>120))return json({error:'Identificador PC: máximo 120 caracteres.'},400);
  if(path==='/api/admin/licenses'&&request.method==='POST'){
   const admin=b.kind==='admin';
-  if(typeof b.label!=='string'||!b.label.trim()||b.label.length>150||(!admin&&(!Number.isSafeInteger(b.expiresAt)||b.expiresAt<=Date.now())))return json({error:'Indica un nombre y una fecha futura.'},400);
+  if(typeof b.label!=='string'||!b.label.trim()||b.label.length>150||(!admin&&(!Number.isSafeInteger(b.expiresAt)||b.expiresAt>FOREVER||b.expiresAt<=Date.now())))return json({error:'Indica un nombre y una fecha futura.'},400);
   const email=String(b.email||'').trim().toLowerCase();if(!validEmail(email))return json({error:'Correo del destinatario incorrecto.'},400);
   const plan=admin||b.plan==='premium'?'premium':'basic';
   const key=(admin?'ADMIN-':plan==='premium'?'PRE-':'EEM-')+crypto.randomUUID().replaceAll('-','').toUpperCase(),id=crypto.randomUUID();
-  await env.AUTH.prepare('INSERT INTO licenses(id,key_hash,label,expires_at,created_at,plan,key_ciphertext,owner_email,license_kind) VALUES(?,?,?,?,?,?,?,?,?)').bind(id,await digest(key),b.label.trim(),admin?FOREVER:b.expiresAt,Date.now(),plan,await seal(key,env,id),email,admin?'admin':'standard').run();
+  await env.AUTH.prepare('INSERT INTO licenses(id,key_hash,label,expires_at,created_at,plan,key_ciphertext,owner_email,license_kind,pc_identifier) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(id,await digest(key),b.label.trim(),admin?FOREVER:b.expiresAt,Date.now(),plan,await seal(key,env,id),email,admin?'admin':'standard',String(b.pcIdentifier||'').trim()).run();
   return json({key,id},201);
  }
  const id=path.match(/^\/api\/admin\/licenses\/([a-f0-9-]+)$/)?.[1];
@@ -83,7 +85,9 @@ export async function adminLicenses(request,env,path,json){
   const target=await env.AUTH.prepare('SELECT license_kind FROM licenses WHERE id=?').bind(id).first();
   if(!target)return json({error:'Licencia no encontrada.'},404);
   if(target.license_kind==='admin'&&(b.plan||b.expiresAt||b.kind))return json({error:'ADMIN siempre incluye todas las funciones y no caduca. Puedes bloquearla o editar su correo.'},400);
-  if(typeof b.key==='string'){
+  if(typeof b.pcIdentifier==='string'){
+   await env.AUTH.prepare('UPDATE licenses SET pc_identifier=? WHERE id=?').bind(b.pcIdentifier.trim(),id).run();
+  }else if(typeof b.key==='string'){
    const row=await env.AUTH.prepare('SELECT key_hash FROM licenses WHERE id=?').bind(id).first();let key=normalizeLicenseKey(b.key);if(!row||!key)return json({error:'Clave incorrecta.'},400);
    if(await digest(key)!==row.key_hash&&key.startsWith('EEM-')&&!/^\s*EEM/i.test(b.key))key='PRE-'+key.slice(4);
    if(await digest(key)!==row.key_hash)return json({error:'La clave no corresponde a esta licencia.'},400);
@@ -93,7 +97,7 @@ export async function adminLicenses(request,env,path,json){
    await env.AUTH.prepare('UPDATE licenses SET owner_email=? WHERE id=?').bind(email,id).run();
   }else if(['basic','premium'].includes(b.plan))await env.AUTH.prepare('UPDATE licenses SET plan=? WHERE id=?').bind(b.plan,id).run();
   else if(typeof b.active==='boolean')await env.AUTH.prepare('UPDATE licenses SET active=? WHERE id=?').bind(b.active?1:0,id).run();
-  else if(Number.isSafeInteger(b.expiresAt)&&b.expiresAt>Date.now())await env.AUTH.prepare('UPDATE licenses SET expires_at=? WHERE id=?').bind(b.expiresAt,id).run();
+  else if(Number.isSafeInteger(b.expiresAt)&&b.expiresAt<=FOREVER&&b.expiresAt>Date.now())await env.AUTH.prepare('UPDATE licenses SET expires_at=? WHERE id=?').bind(b.expiresAt,id).run();
   else return json({error:'Fecha incorrecta.'},400);
   return json({ok:true});
  }

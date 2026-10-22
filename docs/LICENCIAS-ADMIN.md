@@ -14,3 +14,11 @@ En Administración → Licencias, seleccionar ADMIN. No se pide fecha. Sólo un 
 Compatibilidad: DMG/EXE Estable 1.3.2 ya verifican estos permisos Premium sin cambios; el mensaje de activación de esos instaladores todavía describe la política normal de un equipo. La web y el código para futuros instaladores muestran la explicación actualizada. No se han sustituido los instaladores por este cambio.
 
 Servidor: aplicar server/admin-licenses.sql UNA vez sobre la base existente antes de publicar. Las instalaciones vacías nuevas usan server/nueva-instalacion.sql, que ya lo incluye. No ejecutar ambos sobre la misma base. La migración no cambia licencias anteriores ni la firma de licencias.
+
+## Identificador PC y fechas sin límite
+
+Todas las licencias permiten una referencia administrativa Identificador PC (máximo 120 caracteres), editable, buscable e incluida en el PDF. No sustituye ni permite cambiar el vínculo criptográfico del equipo. En ADMIN puede describir el grupo o centro; el contador sigue mostrando equipos distintos.
+
+Las fechas se escriben DD-MM-AAAA. 00-00-0000 significa Sin caducidad tanto al crear como al renovar Básica o Premium, sin convertirlas en ADMIN ni ampliar su límite de un equipo. Se mantiene la comprobación de licencia cada 30 días y la posibilidad de bloqueo. Los instaladores actuales son compatibles sin reinstalación.
+
+Sobre instalaciones existentes aplicar server/license-pc.sql una sola vez. El esquema combinado de instalaciones nuevas ya lo incluye; no volver a aplicar ese esquema en producción.
