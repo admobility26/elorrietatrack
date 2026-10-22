@@ -18,7 +18,8 @@
     "test:desktop": "node tests/desktop-edition.mjs",
     "test:licensing": "node tests/licensing.mjs",
     "domain": "node scripts/configure-domain.mjs",
-    "test:premium": "node tests/premium-workspace.mjs && node tests/premium-movie.mjs && node tests/premium-desktop.mjs"
+    "test:premium": "node tests/premium-workspace.mjs && node tests/premium-movie.mjs && node tests/premium-desktop.mjs",
+    "test:domain": "node tests/domain-migration.mjs"
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "^8.3.0",

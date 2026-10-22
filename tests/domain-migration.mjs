@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';import {spawnSync} from 'node:child_process';import {domainConfiguration} from '../scripts/domain-config.mjs';
+const file=new URL('../wrangler.jsonc',import.meta.url),before=fs.readFileSync(file,'utf8'),source=JSON.parse(before);source.routes=[{pattern:'anterior.example.com',custom_domain:true}];
+const {config,origin}=domainConfiguration(source,'https://clase.example.com/');
+assert.equal(origin,'https://clase.example.com');assert.equal(config.vars.PUBLIC_ORIGIN,source.vars.PUBLIC_ORIGIN);assert.equal(config.workers_dev,true);assert.deepEqual(config.d1_databases,source.d1_databases);assert.equal(config.account_id,source.account_id);assert.equal(config.name,source.name);assert.equal(config.routes.length,2);assert.equal(source.routes.length,1);
+const active=domainConfiguration(config,origin,{activate:true}).config;assert.equal(active.vars.PUBLIC_ORIGIN,origin);assert.equal(active.routes.length,2);assert.deepEqual(active.d1_databases,source.d1_databases);
+for(const bad of ['http://clase.example.com','https://u:p@example.com','example.com/path','example.com?x=1','example.com#x','localhost','x.workers.dev','-bad.example.com','example.com:8080'])assert.throws(()=>domainConfiguration(source,bad));
+const r=spawnSync(process.execPath,['scripts/configure-domain.mjs','clase.example.com'],{cwd:new URL('..',import.meta.url),encoding:'utf8'});assert.equal(r.status,0,r.stderr);assert.equal(fs.readFileSync(file,'utf8'),before);
+console.log('PASS domain: preview has no changes, attach before receipt switch, preserve database/account/Worker/routes and workers.dev, reject invalid domains.');

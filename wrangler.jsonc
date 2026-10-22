@@ -20,5 +20,6 @@
   "account_id": "a42daa5d5844f10ca43694aaba7ff82b",
   "vars": {
     "PUBLIC_ORIGIN": "https://elorrietatrack.admobility26.workers.dev"
-  }
+  },
+  "workers_dev": true
 }
