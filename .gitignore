@@ -22,3 +22,12 @@ tests/*-final.mp4
 node_modules
 .tmp/
 .dev.vars
+
+# Secretos y datos de instalaciones independientes
+.env
+.env.*
+.dev.vars*
+*signing-private*.json
+*.sqlite
+*.sqlite3
+*.db

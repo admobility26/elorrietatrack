@@ -1,5 +1,5 @@
 {
-  "name": "elorrietatrack",
+  "name": "elorrietatrack-estable",
   "compatibility_date": "2026-10-20",
   "assets": {
     "directory": "./dist",
@@ -7,14 +7,15 @@
     "run_worker_first": true
   },
   "build": {
-    "command": "npm run build"
+    "command": "node scripts/check-new-installation.mjs && npm run build"
   },
   "main": "server/worker.js",
   "d1_databases": [
     {
       "binding": "AUTH",
-      "database_name": "elorrietatrack-auth",
-      "database_id": "4505069d-1732-4738-bd05-a0b2c7af8903"
+      "database_name": "elorrietatrack-estable-auth",
+      "database_id": "PENDIENTE_NUEVA_BASE_DE_DATOS"
     }
-  ]
+  ],
+  "account_id": "PENDIENTE_NUEVA_CUENTA"
 }

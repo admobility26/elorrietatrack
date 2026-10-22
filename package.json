@@ -8,11 +8,11 @@
     "dev": "vite",
     "build": "node scripts/sync-help.mjs && node scripts/sync-legal.mjs && vite build",
     "preview": "vite preview",
-    "desktop:dev": "node scripts/electron-dev.cjs",
+    "desktop:dev": "node scripts/check-new-installation.mjs && node scripts/electron-dev.cjs",
     "icon:mac": "node scripts/make-icon.cjs",
-    "package:mac": "npm run icon:mac && npm run build && electron-builder --mac dmg --arm64 --publish never",
+    "package:mac": "node scripts/check-new-installation.mjs && npm run icon:mac && npm run build && electron-builder --mac dmg --arm64 --publish never",
     "prepare": "npm run build",
-    "package:win": "npm run build && electron-builder --win nsis --x64 --publish never",
+    "package:win": "node scripts/check-new-installation.mjs && npm run build && electron-builder --win nsis --x64 --publish never",
     "test": "node tests/board-model.mjs && node tests/edition.mjs && node tests/trajectory-edit.mjs && node tests/trajectory-board.mjs",
     "test:recording": "node tests/trajectory-pause.mjs && node tests/board-recording.mjs",
     "test:desktop": "node tests/desktop-edition.mjs",
@@ -65,8 +65,8 @@
       "icon": "build/icon.icns",
       "identity": null,
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "ElorrietaTrack usa el micr\u00f3fono si eliges grabar una explicaci\u00f3n.",
-        "NSBluetoothAlwaysUsageDescription": "ElorrietaTrack Premium usa Bluetooth para conectar con RaceBox Mini o Mini S y recibir los datos de la pr\u00e1ctica."
+        "NSMicrophoneUsageDescription": "ElorrietaTrack usa el micrófono si eliges grabar una explicación.",
+        "NSBluetoothAlwaysUsageDescription": "ElorrietaTrack Premium usa Bluetooth para conectar con RaceBox Mini o Mini S y recibir los datos de la práctica."
       }
     },
     "dmg": {
@@ -86,7 +86,7 @@
         }
       ]
     },
-    "copyright": "Copyright \u00a9 2026 Aitor Delgado Mart\u00ednez \u00b7 AD Mobility",
+    "copyright": "Copyright © 2026 Aitor Delgado Martínez · AD Mobility",
     "win": {
       "target": [
         {
@@ -111,6 +111,6 @@
     "afterPack": "scripts/after-pack.cjs"
   },
   "license": "SEE LICENSE IN LICENSE",
-  "author": "Aitor Delgado Mart\u00ednez (AD Mobility)",
-  "description": "ElorrietaTrack: trayectorias y pizarra did\u00e1ctica para formaci\u00f3n vial"
+  "author": "Aitor Delgado Martínez (AD Mobility)",
+  "description": "ElorrietaTrack: trayectorias y pizarra didáctica para formación vial"
 }

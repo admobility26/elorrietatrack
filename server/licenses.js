@@ -47,7 +47,7 @@ export async function licenseAPI(request,env,path,json){
  return json({error:'No encontrado.'},404);
 }
 async function issue(r,env,json){
- const now=Date.now(),payload=JSON.stringify({id:r.id,label:r.label,device:r.device,publicKey:r.public_key,plan:r.plan==='premium'?'premium':'basic',apiBase:env.PUBLIC_ORIGIN||new URL('https://elorrietatrack.promociones7819.workers.dev').origin,expiresAt:r.expires_at,issuedAt:now,offlineUntil:Math.min(r.expires_at,now+30*DAY)});
+ const now=Date.now(),payload=JSON.stringify({id:r.id,label:r.label,device:r.device,publicKey:r.public_key,plan:r.plan==='premium'?'premium':'basic',apiBase:env.PUBLIC_ORIGIN||new URL('https://pendiente.invalid').origin,expiresAt:r.expires_at,issuedAt:now,offlineUntil:Math.min(r.expires_at,now+30*DAY)});
  const key=await crypto.subtle.importKey('jwk',JSON.parse(env.LICENSE_PRIVATE_JWK),{name:'Ed25519'},false,['sign']);
  const signature=await crypto.subtle.sign('Ed25519',key,new TextEncoder().encode(payload));
  return json({payload,signature:btoa(String.fromCharCode(...new Uint8Array(signature)))});

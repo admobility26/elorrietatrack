@@ -1,3 +1,4 @@
+import './check-new-installation.mjs';
 // Run only after registering the domain and adding its DNS zone to this Cloudflare account.
 import fs from 'node:fs/promises';import {spawnSync} from 'node:child_process';
 const args=process.argv.slice(2),input=args.find(a=>!a.startsWith('--'));if(!input)throw Error('Uso: npm run domain -- app.tudominio.com [--apply]');
