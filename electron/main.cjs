@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Aitor Delgado Martínez · AD Mobility
 // SPDX-License-Identifier: LicenseRef-RutasAD-Educational-NonCommercial-1.0
-const { app, BrowserWindow, ipcMain, protocol, net, shell, session, dialog, safeStorage } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol, net, shell, session, dialog, safeStorage, clipboard, Menu } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -19,6 +19,7 @@ const appDataDirectory = path.join(dataDirectory, '.datos-de-la-aplicacion');
 app.setPath('userData', appDataDirectory);
 const licensing=require('./licensing.cjs')({app,safeStorage});
 ipcMain.handle('license:status',()=>licensing.status());
+ipcMain.handle('license:paste',async()=>{const text=(await clipboard.readText()).trim();const compact=text.toUpperCase().replace(/[\s\u200B-\u200D\uFEFF\-\u2010-\u2015\u2212]/g,'');if(text.length>100||! /^(?:(?:ADMIN|EEM|PRE))?[A-F0-9]{32}$/.test(compact))throw Error('Copia una clave de licencia válida antes de pulsar Pegar.');return text;});
 ipcMain.handle('license:activate',(_event,key)=>licensing.activate(String(key||'').slice(0,100)));
 // Enforce activation in the main process before opening protected data or starting recordings.
 const registerHandle=ipcMain.handle.bind(ipcMain);
@@ -136,6 +137,7 @@ async function createWindow() {
     },
   });
 
+  window.webContents.on('context-menu',(_event,params)=>{if(params.isEditable)Menu.buildFromTemplate([{role:'cut'},{role:'copy'},{role:'paste'},{type:'separator'},{role:'selectAll'}]).popup({window});});
   window.on('close',event=>{if(!autosaveClients.has(window.webContents.id))return;const pending=closingWindows.get(window.webContents.id);if(pending?.ready)return;event.preventDefault();if(pending)return;const id=require('node:crypto').randomUUID();closingWindows.set(window.webContents.id,{window,id,ready:false});window.webContents.send('autosave:prepare-close',id);});
   require('./bluetooth.cjs')(window,()=>licensing.check().valid&&licensing.check().plan==='premium');
   const rendererId=window.webContents.id;window.on('closed',()=>closingWindows.delete(rendererId));
@@ -157,6 +159,7 @@ async function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  Menu.setApplicationMenu(Menu.buildFromTemplate([...(process.platform==='darwin'?[{role:'appMenu'}]:[{role:'fileMenu'}]),{label:'Edición',submenu:[{role:'undo'},{role:'redo'},{type:'separator'},{role:'cut'},{role:'copy'},{role:'paste'},{role:'selectAll'}]},{role:'windowMenu'}]));
   // Identify the native app to OSM; Chromium's normal HTTP cache honors tile freshness.
   session.defaultSession.webRequest.onBeforeSendHeaders({urls:['https://tile.openstreetmap.org/*']},(details,callback)=>callback({requestHeaders:{...details.requestHeaders,'User-Agent':`ElorrietaTrack/${app.getVersion()} (+https://github.com/promociones7819-stack/elorrietaTrack; contact: admobility26@gmail.com)`}}));
   session.defaultSession.on('will-download',(_event,item)=>{const raw=item.getFilename(),directory=organized.downloadFolder(dataDirectory,raw);if(!directory)return;organized.ensure(dataDirectory);const extension=path.extname(raw).toLowerCase(),name=cleanFileName(raw,extension);item.setSavePath(organized.uniqueFile(directory,name));});
