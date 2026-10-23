@@ -1,6 +1,6 @@
 {
   "name": "elorrieta-track",
-  "version": "1.3.3",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
@@ -19,7 +19,8 @@
     "test:licensing": "node tests/licensing.mjs",
     "domain": "node scripts/configure-domain.mjs",
     "test:premium": "node tests/premium-workspace.mjs && node tests/premium-movie.mjs && node tests/premium-desktop.mjs",
-    "test:domain": "node tests/domain-migration.mjs"
+    "test:domain": "node tests/domain-migration.mjs",
+    "test:assembly": "node tests/review-assembly.mjs && node tests/assembly-movie.mjs && node tests/assembly-workspace.mjs"
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "^8.3.0",
@@ -66,8 +67,8 @@
       "icon": "build/icon.icns",
       "identity": null,
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "ElorrietaTrack usa el micrófono si eliges grabar una explicación.",
-        "NSBluetoothAlwaysUsageDescription": "ElorrietaTrack Premium usa Bluetooth para conectar con RaceBox Mini o Mini S y recibir los datos de la práctica."
+        "NSMicrophoneUsageDescription": "ElorrietaTrack usa el micr\u00f3fono si eliges grabar una explicaci\u00f3n.",
+        "NSBluetoothAlwaysUsageDescription": "ElorrietaTrack Premium usa Bluetooth para conectar con RaceBox Mini o Mini S y recibir los datos de la pr\u00e1ctica."
       }
     },
     "dmg": {
@@ -87,7 +88,7 @@
         }
       ]
     },
-    "copyright": "Copyright © 2026 Aitor Delgado Martínez · AD Mobility",
+    "copyright": "Copyright \u00a9 2026 Aitor Delgado Mart\u00ednez \u00b7 AD Mobility",
     "win": {
       "target": [
         {
@@ -112,6 +113,6 @@
     "afterPack": "scripts/after-pack.cjs"
   },
   "license": "SEE LICENSE IN LICENSE",
-  "author": "Aitor Delgado Martínez (AD Mobility)",
-  "description": "ElorrietaTrack: trayectorias y pizarra didáctica para formación vial"
+  "author": "Aitor Delgado Mart\u00ednez (AD Mobility)",
+  "description": "ElorrietaTrack: trayectorias y pizarra did\u00e1ctica para formaci\u00f3n vial"
 }

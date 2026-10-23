@@ -1,3 +1,5 @@
+import AssemblyPanel from './AssemblyPanel.jsx';
+import {appendReviewParts} from './reviewAssembly.js';
 import '../premium/styles.css';
 import './premium-layout.css';
 import HomeLogo from '../HomeLogo.jsx';
@@ -115,12 +117,13 @@ const loadProjectGpxReview = project => {
 const parseGpx = text => {
   const xml = new DOMParser().parseFromString(text, 'application/xml');
   if (xml.querySelector('parsererror')) throw new Error('El archivo GPX no tiene un formato válido.');
+  const segments=[...xml.querySelectorAll('trkseg,rte')];
   const points = [...xml.querySelectorAll('trkpt, rtept')].map(point => {
     const lng = Number(point.getAttribute('lon')), lat = Number(point.getAttribute('lat'));
     const timeText = point.querySelector('time')?.textContent;
     const time = timeText ? Date.parse(timeText) : null;
     return Number.isFinite(lng) && Number.isFinite(lat) && Math.abs(lng) <= 180 && Math.abs(lat) <= 90
-      ? { coordinates: [lng, lat], time: Number.isFinite(time) ? time : null }
+      ? { coordinates: [lng, lat], time: Number.isFinite(time) ? time : null,segment:Math.max(0,segments.indexOf(point.closest('trkseg,rte'))) }
       : null;
   }).filter(Boolean);
   if (points.length < 2) throw new Error('El GPX debe contener al menos dos puntos de recorrido.');
@@ -791,16 +794,17 @@ export default function PremiumApp() {
   useEffect(() => { routesRef.current = routes; activeRef.current = activeId; }, [routes, activeId]);
 
   const importGpx = async event => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = [...(event.target.files||[])];
+    if (!files.length) return;
     try {
-      const contents = await file.text();
-      const parsed = parseGpx(contents);
-      const storedGpxFile = window.elorrietaDesktop ? await window.elorrietaDesktop.saveGpx(file.name, contents) : '';
-      const review = { ...emptyGpxReview(), name: parsed.name || file.name.replace(/\.gpx$/i, ''), points: parsed.points, sourceFile: file.name, storedGpxFile };
+      const additions=[];
+      for(const file of files){const contents=await file.text(),parsed=parseGpx(contents);const storedGpxFile=window.elorrietaDesktop?await window.elorrietaDesktop.saveGpx(file.name,contents):'';additions.push({id:crypto.randomUUID(),name:parsed.name||file.name.replace(/\.gpx$/i,''),points:parsed.points,sourceFile:file.name,storedGpxFile,incidents:[]});}
+      const first=additions[0];
+      const review=gpxReview.points.length||additions.length>1?appendReviewParts(gpxReview,additions):{...emptyGpxReview(),...first};
+      if(!review.name)review.name=first.name;
       setGpxReview(review); gpxRef.current = review; setWorkspaceMode('gpx-review');
-      setGpxProgress(0); gpxProgressRef.current = 0; setProgress(0); setPlaying(false); setPlacingGpxIncident(false); setGpxMessage(`Importado «${review.name}» · ${review.points.length.toLocaleString('es-ES')} puntos${parsed.points.some(point => point.time) ? ' · contiene marcas de tiempo' : ''}.`);
-      const coords = parsed.points.map(point => point.coordinates);
+      setGpxProgress(0); gpxProgressRef.current = 0; setProgress(0); setPlaying(false); setPlacingGpxIncident(false); setGpxMessage(`Importado «${review.name}» · ${review.points.length.toLocaleString('es-ES')} puntos${review.parts?.length ? ' · '+review.parts.length+' tramos' : ''}.`);
+      const coords = review.points.map(point => point.coordinates);
       const bounds = coords.reduce((box, coord) => box.extend(coord), new LngLatBounds(coords[0], coords[0]));
       mapRef.current?.fitBounds(bounds.toArray(), { padding: 90, maxZoom: 17, duration: 900 });
     } catch (error) {
@@ -1402,8 +1406,9 @@ export default function PremiumApp() {
         </> : <div className="gpx-review-panel">
           <FolderWorkspace review={gpxReview} onReview={r=>{setPlaying(false);setGpxReview(r);seekGpx(0);}} language={language} disabled={liveLesson}/><RaceBoxPanel language={language} review={gpxReview} projectId={currentProject.id} onActive={setLiveLesson} onPosition={setRaceboxPosition} onReview={r=>{setGpxReview(r);gpxRef.current=r;setPlaying(false);setPlacingGpxIncident(false);}}/><fieldset className="review-controls" disabled={liveLesson}><p className="eyebrow">{t("GIDATZEAREN BERRIKUSPENA","REVISIÓN DE CONDUCCIÓN")}</p><h2>{t("Ikaslearen benetako ibilbidea","Recorrido real del alumno")}</h2><button className="gpx-clip-open" disabled={gpxReview.points.length<2||recording} onClick={()=>{setPlaying(false);setClipRequest(n=>n+1);}}>{t("✂ Moztu","✂ Recortar")}</button>
           <p className="gpx-intro">{t("Inportatu saioan grabatutako GPXa. Ondoren, markatu akatsak mapan eta gehitu azalpena ikaslearekin berrikusteko.","Importa el GPX grabado durante la clase. Después, marca en el mapa los errores y añade una explicación para revisarlos con el alumno.")}</p>
-          <input ref={gpxFileInputRef} className="audio-file-input" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" onChange={importGpx} />
-          <button className="gpx-import-button" onClick={() => gpxFileInputRef.current?.click()}>{t("＋ GPX fitxategia inportatu","＋ Importar archivo GPX")}</button>
+          <input ref={gpxFileInputRef} className="audio-file-input" type="file" multiple accept=".gpx,application/gpx+xml,application/xml,text/xml" onChange={importGpx} />
+          <button className="gpx-import-button" onClick={() => gpxFileInputRef.current?.click()}>{t("＋ GPX zatiak gehitu","＋ Añadir tracks GPX")}</button>
+          <AssemblyPanel review={gpxReview} onReview={setGpxReview} onProgress={seekGpx} onPlaying={setPlaying} language={language} disabled={playing||!!liveLesson}/>
           {gpxReview.points.length > 1 ? <>
             <div className="gpx-summary"><div><strong>{gpxReview.name || 'Recorrido importado'}</strong><small>{gpxReview.points.length.toLocaleString('es-ES')} posiciones · {Math.round(gpxReview.points.slice(1).reduce((sum, point, index) => sum + distance(gpxReview.points[index].coordinates, point.coordinates), 0)).toLocaleString('es-ES')} m</small><small>{gpxReview.points.some(point => point.time) ? t("Fitxategiak GPS ordua dauka","El archivo incluye hora GPS") : t("Fitxategiak ez dauka GPS ordurik","El archivo no incluye hora GPS")}</small>{gpxReview.storedGpxFile && <small>GPX original guardado en la carpeta de datos.</small>}</div><div className="gpx-summary-actions"><button onClick={renameGpxReview} title="Cambiar nombre del recorrido">{t("Izena aldatu","Renombrar")}</button><button onClick={clearGpxReview} title="Quitar recorrido GPX">{t("Kendu","Quitar")}</button></div></div>
             <div className="section-title conflict-section-title"><div><span className="eyebrow">{t("AKATSAK ETA OHARRAK","ERRORES Y NOTAS")}</span><span className="count-badge">{gpxReview.incidents.length}</span></div><button className="add-route" onClick={startGpxIncidentPlacement} disabled={placingGpxIncident} aria-label="Añadir señal o punto crítico">+</button></div>

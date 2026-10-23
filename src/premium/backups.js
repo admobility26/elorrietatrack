@@ -1,3 +1,4 @@
+import {validateAssembly} from './reviewAssembly.js';
 import {BOARD_DRAFT_KEY,SESSION_KEY,validBoardRecovery,validSession,suspendAutosave} from './autosave.js';
 import {validBoardDocument} from './boardModel.js';
 import {BOARD_CASES_KEY,validBoardCases} from './boardModel.js';
@@ -16,6 +17,8 @@ function reviewValid(review){
  if(!review||!array(review.points,100000)||!array(review.incidents,10000))fail();
  for(const p of review.points)if(!p||!coordinates(p.coordinates)||(p.time!=null&&!Number.isFinite(p.time)))fail();
  for(const i of review.incidents)if(!i||!coordinates(i.coordinates)||typeof i.title!=='string'||typeof i.note!=='string')fail();
+ try{validateAssembly(review);}catch{fail();}
+ if(review.parts!=null){if(!array(review.parts,100)||new Set(review.parts.map(p=>p.id)).size!==review.parts.length)fail();for(const p of review.parts){if(!text(p.id)||!text(p.name)||p.parts)fail();reviewValid({...p,incidents:p.incidents||[]});if(!Number.isFinite(p.startTime)||!Number.isFinite(p.endTime)||!Number.isFinite(p.shift)||p.endTime<=p.startTime)fail();}}
  if(review.name!=null&&typeof review.name!=='string')fail();
  if(review.media!=null&&(!review.media||typeof review.media!=='object'||typeof review.media.name!=='string'))fail();
 }

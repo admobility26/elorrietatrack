@@ -269,5 +269,24 @@
       "Premium liburutegia oinarrizkotik bereizita dago. Egin kopiak dagokion espaziotik; ez dira automatikoki nahasten. Jatorrizko bideoak beren karpetetan jarraitzen dute.",
       "GPX moduak PIP bideoa kargatu, gorabeherak gehitu eta denboren araberako kopia moztu dezake jatorrizkoa aldatu gabe. Ikasleek bideorik edo trackik gabeko klaseak izan ditzakete eta ibilbide bera hainbat ikasleri eslei dakieke. RaceBoxek gailu bateragarria eta Bluetooth baimena behar ditu; web Safarik ez du Web Bluetooth eskaintzen. Chrome eta mahaigainean, deskonektatu lehenik aplikazio ofiziala."
     ]
+  },
+  {
+    "id": "montaje-tramos",
+    "es": [
+      "Montaje de varios GPX y vídeos PIP",
+      "En GPX + vídeo, usa Añadir tracks GPX para seleccionar uno o varios archivos con horas completas. En Tramos del montaje puedes abrir, subir, bajar o quitar cada tramo. Los originales se conservan.",
+      "Abre cada tramo y selecciona su vídeo PIP. Ajusta la sincronización por separado. El montaje reproduce los tramos consecutivamente y omite el tiempo transcurrido entre grabaciones. Cada tramo usa un GPX y un vídeo; el vídeo debe cubrir el intervalo elegido.",
+      "Para vídeos largos, guarda todos los GPX y vídeos en una misma carpeta y usa Abrir carpeta. Carga el primero y usa Añadir como tramo para los demás. Guarda el proyecto para recuperar las asociaciones; si mueves la carpeta, selecciónala de nuevo. Los vídeos pequeños seleccionados directamente pueden guardarse localmente; los grandes deben seleccionarse de nuevo o leerse desde la carpeta.",
+      "En Mapa + PIP · MP4 puedes activar Narrar con micrófono y exportar un solo MP4 con el mapa, la ruta, los vídeos PIP, los puntos críticos y la marca de agua. Durante la exportación, Pausar imagen detiene mapa y vídeo mientras el micrófono sigue grabando; Reanudar imagen continúa el recorrido. Mantén la app visible y la pantalla encendida.",
+      "Las copias de seguridad conservan el montaje y sus incidencias, pero no contienen los vídeos originales. Para enviar a pizarra con vídeo, recorta un tramo cada vez."
+    ],
+    "eu": [
+      "GPX eta PIP bideo batzuen muntaketa",
+      "GPX + bideoa atalean, erabili GPX zatiak gehitu ordu osoak dituzten fitxategi bat edo batzuk hautatzeko. Muntaketaren zatiak atalean zatiak ireki, ordenatu edo kendu ditzakezu. Jatorrizko fitxategiak ez dira aldatzen.",
+      "Ireki zati bakoitza eta hautatu bere PIP bideoa. Doitu sinkronizazioa banan-banan. Muntaketak zatiak bata bestearen ondoren erreproduzitzen ditu, grabazioen arteko denbora kenduta. Zati bakoitzak GPX bat eta bideo bat ditu; bideoak hautatutako tartea estali behar du.",
+      "Bideo luzeetarako, jarri GPX eta bideo guztiak karpeta berean eta erabili Karpeta ireki. Kargatu lehenengoa eta gehitu gainerakoak Zati gisa gehitu botoiarekin. Gorde proiektua loturak berreskuratzeko; karpeta mugituz gero, hautatu berriz.",
+      "Mapa + PIP · MP4 ikuspegian, aktibatu Azalpena mikrofonoarekin eta esportatu mapa, ibilbidea, PIP bideoak, puntu kritikoak eta ur-marka MP4 bakarrean. Esportatzean, Irudia pausatu botoiak mapa eta bideoa gelditzen ditu mikrofonoak grabatzen jarraitzen duen bitartean. Irudia jarraitu botoiak ibilbidearekin jarraitzen du. Mantendu aplikazioa ikusgai eta pantaila piztuta.",
+      "Segurtasun-kopiek muntaketa eta gorabeherak gordetzen dituzte, baina ez jatorrizko bideoak. Bideoarekin arbelera bidaltzeko, moztu zati bakarra aldi bakoitzean."
+    ]
   }
 ]

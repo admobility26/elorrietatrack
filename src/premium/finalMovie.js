@@ -68,3 +68,47 @@ export async function createFinalMovie({videoElement,url,incidents,onProgress,si
   }finally{signal.removeEventListener('abort',abort);document.removeEventListener('visibilitychange',hidden);}
  }finally{if(writer&&!completed)await writer.abort().catch(()=>{});cancelAnimationFrame(frame);video.pause();stream?.getTracks().forEach(t=>t.stop());if(source&&destination)source.disconnect(destination);await wake?.release();video.onended=null;video.onerror=null;video.muted=original.muted;video.playbackRate=original.rate;if(!borrowed){await releaseMovieVideo(video);video.removeAttribute('src');video.load();video.remove();}}
 }
+
+// One recorder and one output file across source changes; never concatenate MP4 blobs.
+export async function createSequenceMovie({videoElement:video,clips,incidents,composition,onProgress,signal,audioContext,sink,narration=false,isImagePaused=()=>false}){
+ const watermark=await loadVideoWatermark(),mime=['video/mp4;codecs="avc1.42E01E,mp4a.40.2"','video/mp4'].find(m=>globalThis.MediaRecorder?.isTypeSupported(m));
+ if(!mime)throw Error('Este navegador no permite exportar MP4.');
+ const original={src:video.src,muted:video.muted,rate:video.playbackRate};
+ let destination,source,mic,micSource,stream,recorder,frame,wake,failed,done,completed=false;const writer=sink?movieWriter(sink):null,chunks=[];
+ const total=clips.reduce((sum,c)=>sum+c.duration,0);if(!(total>0))throw Error('El montaje está vacío.');
+ const audio=prepareMovieAudio(video,audioContext);await audio.resume();
+ const canvas=document.createElement('canvas'),w=composition.stageRect?.().width*devicePixelRatio||composition.mapCanvas.width,h=composition.stageRect?.().height*devicePixelRatio||composition.mapCanvas.height,scale=Math.min(1,1280/w,720/h);canvas.width=Math.max(2,Math.round(w*scale/2)*2);canvas.height=Math.max(2,Math.round(h*scale/2)*2);const ctx=canvas.getContext('2d');
+ function stop(){if(recorder&&recorder.state!=='inactive')recorder.stop();}
+ const abort=()=>{failed=new DOMException('Exportación cancelada.','AbortError');stop();},hidden=()=>{if(document.hidden){failed=Error('Mantén la app visible durante la exportación.');stop();}};
+ async function ready(clip){if(signal.aborted)throw new DOMException('Exportación cancelada.','AbortError');const url=await clip.getUrl();if(video.src!==url){const loaded=waitForVideo(video,'loadeddata',signal);video.src=url;video.load();await loaded;}else if(video.readyState<2)await waitForVideo(video,'loadeddata',signal);
+  if(clip.startSecond<-.05||clip.endSecond>video.duration+.15||clip.endSecond<=clip.startSecond)throw Error('El vídeo de «'+clip.name+'» no cubre todo su GPX. Ajusta la sincronización o recorta el tramo.');
+  if(Math.abs(video.currentTime-Math.max(0,clip.startSecond))>.001){const sought=waitForVideo(video,'seeked',signal);video.currentTime=Math.max(0,clip.startSecond);await sought;}video.playbackRate=1;
+ }
+ try{
+  await ready(clips[0]);
+  destination=audio.createMediaStreamDestination();source=movieAudio.get(video).source;source.connect(destination);video.muted=false;
+  if(narration){mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true},video:false});micSource=audio.createMediaStreamSource(mic);micSource.connect(destination);}
+  stream=canvas.captureStream(30);destination.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
+  recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:4000000});
+  done=new Promise((resolve,reject)=>{recorder.onstop=async()=>{try{if(failed)throw failed;resolve(writer?await writer.close():new Blob(chunks,{type:recorder.mimeType}));}catch(e){reject(e);}};recorder.onerror=e=>{failed=e.error||Error('No se pudo generar el MP4.');stop();};});
+  done.catch(()=>{});
+  recorder.ondataavailable=e=>{if(!e.data.size)return;if(!writer){chunks.push(e.data);return;}try{writer.write(e.data).catch(e=>{failed=e;stop();});}catch(e){failed=e;stop();}};
+  signal.addEventListener('abort',abort);document.addEventListener('visibilitychange',hidden);wake=await navigator.wakeLock?.request('screen').catch(()=>null);
+  recorder.start(1000);
+  for(let index=0;index<clips.length;index++){
+   const clip=clips[index];if(index){recorder.pause();await ready(clip);clips[index-1].release?.();if(signal.aborted)throw new DOMException('Exportación cancelada.','AbortError');recorder.resume();}
+   await new Promise((resolve,reject)=>{
+    let settled=false;const finish=error=>{if(settled)return;settled=true;cancelAnimationFrame(frame);video.pause();video.removeEventListener('error',errorHandler);signal.removeEventListener('abort',cancel);error?reject(error):resolve();};
+    const errorHandler=()=>finish(videoDecodeError(video)),cancel=()=>finish(new DOMException('Exportación cancelada.','AbortError'));
+    video.addEventListener('error',errorHandler);signal.addEventListener('abort',cancel,{once:true});
+    const paint=()=>{if(failed)return finish(failed);if(signal.aborted)return cancel();const second=clip.offset+Math.max(0,Math.min(clip.duration,video.currentTime-clip.startSecond));onProgress(second/total,second);drawMovie(ctx,video,incidents,second,composition);drawVideoWatermark(ctx,watermark,canvas.width,canvas.height);
+     if(video.currentTime>=clip.endSecond-.02||video.ended)return finish();
+     if(isImagePaused()){video.pause();}else if(video.paused)video.play().catch(finish);
+     frame=requestAnimationFrame(paint);
+    };paint();
+   });
+  }
+  stop();const blob=await done;if((blob.saved?blob.bytes:blob.size)<100)throw Error('El MP4 está vacío.');completed=true;return blob;
+ }catch(e){failed=e;stop();if(done)await done.catch(()=>{});throw e;}
+ finally{signal.removeEventListener('abort',abort);document.removeEventListener('visibilitychange',hidden);cancelAnimationFrame(frame);video.pause();stream?.getTracks().forEach(t=>t.stop());mic?.getTracks().forEach(t=>t.stop());micSource?.disconnect();if(source&&destination)source.disconnect(destination);await wake?.release();video.muted=original.muted;video.playbackRate=original.rate;if(original.src&&video.src!==original.src){video.src=original.src;video.load();}if(writer&&!completed)await writer.abort().catch(()=>{});}
+}
