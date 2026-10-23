@@ -13,12 +13,12 @@ export function drawMovie(ctx,video,incidents,second,composition){
   const mx=(map.left-stage.left)*scale,my=(map.top-stage.top)*scale,mw=map.width*scale,mh=map.height*scale;
   ctx.drawImage(composition.mapCanvas,mx,my,mw,mh);
   const r=composition.pipRect(),x=(r.left-stage.left)*scale,y=(r.top-stage.top)*scale,pw=r.width*scale,ph=r.height*scale;
-  ctx.fillStyle='#111';ctx.fillRect(x,y,pw,ph);const fit=Math.min(pw/video.videoWidth,ph/video.videoHeight);
-  ctx.drawImage(video,x+(pw-video.videoWidth*fit)/2,y+(ph-video.videoHeight*fit)/2,video.videoWidth*fit,video.videoHeight*fit);
+  ctx.fillStyle='#111';ctx.fillRect(x,y,pw,ph);const vw=video.videoWidth||video.width,vh=video.videoHeight||video.height,fit=Math.min(pw/vw,ph/vh);
+  ctx.drawImage(video,x+(pw-vw*fit)/2,y+(ph-vh*fit)/2,vw*fit,vh*fit);
   ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.strokeRect(x,y,pw,ph);
   ctx.font=`${Math.max(10,w/110)}px sans-serif`;ctx.fillStyle='#fff';ctx.fillText(composition.attribution||'© geoEuskadi',mx+12,my+mh-12,mw-24);
-  ctx.save();ctx.beginPath();ctx.rect(mx,my,mw,mh);ctx.clip();ctx.translate(mx,my);composition.drawMarkers?.(ctx,mw,mh);ctx.restore();
-  const hud=composition.hud?.(),hr=composition.hudRect?.();if(hud&&hr){const hx=(hr.left-stage.left)*scale,hy=(hr.top-stage.top)*scale,hw=hr.width*scale,hh=hr.height*scale;ctx.fillStyle='#172c25ed';ctx.fillRect(hx,hy,hw,hh);ctx.fillStyle='#fff';const fs=Math.max(9,12*scale);ctx.font=`${fs}px sans-serif`;hud.split('\n').slice(0,11).forEach((line,i)=>ctx.fillText(line,hx+8*scale,hy+(20+i*17)*scale,hw-16*scale));}
+  ctx.save();ctx.beginPath();ctx.rect(mx,my,mw,mh);ctx.clip();ctx.translate(mx,my);composition.drawMarkers?.(ctx,mw,mh);composition.drawVehicle?.(ctx,mw,mh,second);ctx.restore();
+  const hud=composition.hud?.(second),hr=composition.hudRect?.();if(hud&&hr){const hx=(hr.left-stage.left)*scale,hy=(hr.top-stage.top)*scale,hw=hr.width*scale,hh=hr.height*scale;ctx.fillStyle='#172c25ed';ctx.fillRect(hx,hy,hw,hh);ctx.fillStyle='#fff';const fs=Math.max(9,12*scale);ctx.font=`${fs}px sans-serif`;hud.split('\n').slice(0,11).forEach((line,i)=>ctx.fillText(line,hx+8*scale,hy+(20+i*17)*scale,hw-16*scale));}
  }else ctx.drawImage(video,0,0,w,h);
  const active=visibleIncidents(incidents,second);if(!active.length)return;composition?.drawIncident?.(ctx,active[0],composition.split?w/2:w);
  const captionWidth=composition?.split?w/2:w;const font=Math.max(16,Math.round(captionWidth/45)),pad=font;ctx.font=`600 ${font}px sans-serif`;

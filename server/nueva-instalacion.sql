@@ -37,3 +37,6 @@ CREATE INDEX IF NOT EXISTS license_activations_parent ON license_activations(lic
 
 -- One-time additive migration. Administrative reference, independent of hardware binding.
 ALTER TABLE licenses ADD COLUMN pc_identifier TEXT NOT NULL DEFAULT '';
+
+-- Existing accounts remain usable until the administrator explicitly changes their expiry.
+ALTER TABLE users ADD COLUMN expires_at INTEGER NOT NULL DEFAULT 8640000000000000;

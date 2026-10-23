@@ -288,5 +288,22 @@
       "Mapa + PIP · MP4 ikuspegian, aktibatu Azalpena mikrofonoarekin eta esportatu mapa, ibilbidea, PIP bideoak, puntu kritikoak eta ur-marka MP4 bakarrean. Esportatzean, Irudia pausatu botoiak mapa eta bideoa gelditzen ditu mikrofonoak grabatzen jarraitzen duen bitartean. Irudia jarraitu botoiak ibilbidearekin jarraitzen du. Mantendu aplikazioa ikusgai eta pantaila piztuta.",
       "Segurtasun-kopiek muntaketa eta gorabeherak gordetzen dituzte, baina ez jatorrizko bideoak. Bideoarekin arbelera bidaltzeko, moztu zati bakarra aldi bakoitzean."
     ]
+  },
+  {
+    "id": "exportacion-rapida-acceso",
+    "es": [
+      "Exportación rápida y fechas de acceso web",
+      "En Mapa + PIP · MP4, el modo Rápida · mapa fijo procesa el montaje sin reproducirlo en tiempo real. Mantiene el recorrido completo en un mapa fijo y anima la posición del vehículo, la telemetría y los puntos críticos. Conserva el audio original de los vídeos y su velocidad. El rendimiento depende del equipo, de los archivos y de la carga inicial del mapa.",
+      "Para narrar con el micrófono o pausar la imagen mientras hablas, usa Tiempo real · narración. Activar el micrófono selecciona ese modo automáticamente. Los navegadores o archivos no compatibles con la exportación rápida pueden utilizar Tiempo real. Los medios se procesan localmente; no se envían al servidor.",
+      "En Administración, al crear un usuario web debes indicar Acceso hasta en formato DD-MM-AAAA. 00-00-0000 significa sin caducidad. En cada usuario puedes renovar la fecha; la renovación requiere volver a iniciar sesión. Los usuarios que existían antes de esta función mantienen acceso sin caducidad hasta que el administrador les asigne una fecha.",
+      "Cuando vence el acceso, el servidor impide iniciar sesión y acceder a los recursos protegidos. No se borran las bibliotecas locales. El administrador conserva acceso sin caducidad; las fechas de los usuarios web son independientes de las licencias de escritorio."
+    ],
+    "eu": [
+      "Esportazio azkarra eta web-sarbidearen datak",
+      "Mapa + PIP · MP4 ikuspegian, Azkarra · mapa finkoa moduak muntaketa prozesatzen du denbora errealean erreproduzitu gabe. Ibilbide osoa mapa finko batean erakusten du, eta ibilgailuaren kokapena, telemetria eta puntu kritikoak eguneratzen ditu. Bideoen jatorrizko audioa eta abiadura mantentzen ditu. Errendimendua ekipoaren, fitxategien eta maparen hasierako kargaren araberakoa da.",
+      "Mikrofonoarekin azalpenak emateko edo hitz egin bitartean irudia pausatzeko, erabili Denbora errealean · azalpena. Mikrofonoa aktibatzean modu hori automatikoki hautatzen da. Esportazio azkarrarekin bateragarriak ez diren nabigatzaile edo fitxategiekin denbora errealeko modua erabil daiteke. Fitxategiak lokalean prozesatzen dira, ez dira zerbitzarira bidaltzen.",
+      "Administrazioan, web-erabiltzaile bat sortzean, adierazi sarbidearen azken eguna DD-MM-AAAA formatuan. 00-00-0000 balioak iraungitze-datarik ez dagoela esan nahi du. Erabiltzaile bakoitzaren data berritu dezakezu; ondoren saioa berriz hasi behar da. Lehendik zeuden erabiltzaileek mugarik gabeko sarbidea mantentzen dute administratzaileak data ezarri arte.",
+      "Sarbidea iraungitzean zerbitzariak saioa hastea eta baliabide babestuak eskuratzea eragozten du. Tokiko liburutegiak ez dira ezabatzen. Administratzaileak iraungitze-datarik gabeko sarbidea mantentzen du. Web-sarbidearen datak eta mahaigaineko lizentziak independenteak dira."
+    ]
   }
 ]

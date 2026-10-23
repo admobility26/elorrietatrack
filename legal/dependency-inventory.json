@@ -112,6 +112,22 @@
     ]
   },
   {
+    "name": "@types/dom-mediacapture-transform",
+    "version": "0.1.12",
+    "license": "MIT",
+    "files": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/dom-webcodecs",
+    "version": "0.1.13",
+    "license": "MIT",
+    "files": [
+      "LICENSE"
+    ]
+  },
+  {
     "name": "@types/geojson",
     "version": "7946.0.16",
     "license": "MIT",
@@ -173,6 +189,14 @@
     "license": "BSD-3-Clause",
     "files": [
       "LICENSE.txt"
+    ]
+  },
+  {
+    "name": "mediabunny",
+    "version": "1.62.1",
+    "license": "MPL-2.0",
+    "files": [
+      "LICENSE"
     ]
   },
   {
