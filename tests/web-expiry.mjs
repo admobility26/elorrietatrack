@@ -3,7 +3,7 @@ const db=new DatabaseSync(':memory:');for(const f of ['schema.sql','licenses.sql
 function prepare(sql){const s=db.prepare(sql);const withArgs=args=>({first:async()=>s.get(...args),all:async()=>({results:s.all(...args)}),run:async()=>({meta:s.run(...args)})});return {...withArgs([]),bind:(...args)=>withArgs(args)};}
 const env={AUTH:{prepare,batch:async statements=>{for(const s of statements)await s.run();}},ASSETS:{fetch:async()=>new Response('PRIVATE APP')}};
 const token='admin-test';db.prepare("INSERT INTO users(id,email,password_hash,role,created_at) VALUES('admin','admin@example.invalid',?,'admin',?)").run(await passwordHash('test-password'),Date.now());db.prepare('INSERT INTO sessions VALUES(?,?,?)').run(await digest(token),'admin',Date.now()+3600000);
-let source=await fs.readFile('server/worker.js','utf8');source=source.replace("import manifest from '../dist/.vite/manifest.json';",`const manifest={'index.html':{file:'assets/index.js'},'web':{name:'WebAccess',file:'assets/web.js'},'app':{name:'App',file:'assets/app.js'}};`);for(const f of ['accessPolicy.js','licenses.js','password.js','request.js','security-policy.js'])source=source.replace("'./"+f+"'",JSON.stringify(new URL('../server/'+f,import.meta.url).href));await fs.mkdir('.tmp',{recursive:true});const file=new URL('../.tmp/expiry-worker.mjs',import.meta.url);await fs.writeFile(file,source);const worker=(await import(file.href+'?test='+Date.now())).default;
+let source=await fs.readFile('server/worker.js','utf8');source=source.replace("import manifest from '../dist/.vite/manifest.json';",`const manifest={'index.html':{file:'assets/index.js'},'web':{name:'WebAccess',file:'assets/web.js'},'app':{name:'App',file:'assets/app.js'}};`);for(const f of ['accessPolicy.js','licenses.js','password.js','request.js','security-policy.js','login-challenge.js'])source=source.replace("'./"+f+"'",JSON.stringify(new URL('../server/'+f,import.meta.url).href));await fs.mkdir('.tmp',{recursive:true});const file=new URL('../.tmp/expiry-worker.mjs',import.meta.url);await fs.writeFile(file,source);const worker=(await import(file.href+'?test='+Date.now())).default;
 const origin='https://test.invalid';const request=(path,{body,method=body?'POST':'GET',cookie=token,ip='192.0.2.1'}={})=>worker.fetch(new Request(origin+path,{method,headers:{Origin:origin,'Content-Type':'application/json','CF-Connecting-IP':ip,...(cookie?{Cookie:'__Host-elorrietatrack='+cookie}:{})},...(body?{body:JSON.stringify(body)}:{})}),env);
 try{
  const future=Date.now()+86400000;let res=await request('/api/admin/users',{body:{email:'user@example.invalid',password:'test-password',plan:'premium',expiresAt:future}});assert.equal(res.status,201);const user=db.prepare("SELECT * FROM users WHERE email='user@example.invalid'").get();assert.equal(user.expires_at,future);
@@ -34,4 +34,14 @@ try{
  assert.equal((await request('/api/login',{cookie:null,ip:'192.0.2.93',body:{email:user.email,password:'test-password'}})).status,401);
  assert.equal((await request('/api/login',{cookie:null,ip:'192.0.2.93',body:{email:user.email,password:'replacement-password'}})).status,200);
  console.log('PASS password changes: malformed inputs rejected, account-wide attempt limit, expiry recovery, successful change revokes all old sessions and password.');
+ env.TURNSTILE_SITE_KEY='test-public-key';env.TURNSTILE_SECRET_KEY='test-secret';
+ const loginConfig=await(await request('/api/login-config',{cookie:null})).json();assert.deepEqual(loginConfig,{challengeRequired:true,sitekey:'test-public-key'});assert(!JSON.stringify(loginConfig).includes('test-secret'));
+ for(let i=0;i<20;i++)assert.equal((await request('/api/login',{cookie:null,ip:'198.51.100.'+(i+1),body:{email:user.email,password:'replacement-password'}})).status,403);
+ const realFetch=globalThis.fetch,used=new Set();let verifyCalls=0;
+ try{
+  globalThis.fetch=async(_url,options)=>{verifyCalls++;const b=JSON.parse(options.body);assert.equal(b.secret,'test-secret');const success=!used.has(b.response);used.add(b.response);return Response.json({success,action:'login',hostname:'test.invalid'});};
+  const guarded={cookie:null,ip:'198.51.100.90',body:{email:user.email,password:'replacement-password',challengeToken:'test-single-use'}};
+  assert.equal((await request('/api/login',guarded)).status,200);assert.equal((await request('/api/login',guarded)).status,403);assert.equal(verifyCalls,2);
+ }finally{globalThis.fetch=realFetch;}
+ console.log('PASS distributed login: 20 distinct IPs cannot skip challenge; real Worker enforces server verification, single-use result and public-only configuration.');
 }finally{db.close();await fs.unlink(file);}

@@ -33,7 +33,7 @@ El cifrado protege datos cerrados frente a otras cuentas; no protege una sesión
 ## Pendiente o limitado
 
 - Firma comercial Authenticode y notarización Apple: requieren certificados y credenciales del editor. El paquete Mac tiene firma ad hoc de integridad, que no acredita un editor ante Apple. Windows sigue sin firma comercial.
-- Corrección posterior: el límite de 15 intentos por 15 minutos se vincula al correo y la IP, además del límite general de 120 intentos por IP. Evita que una red distinta bloquee globalmente un correo. Una red compartida aún puede agotar su propio límite; no sustituye un desafío gestionado o segundo factor frente a ataques distribuidos. Se devuelve Retry-After: 900. Regresión verificada con ataques dirigidos, rotación de correos y 20 alumnos en una misma red.
+- Corrección posterior: el límite de 15 intentos por 15 minutos se vincula al correo y la IP, además del límite general de 120 intentos por IP. Evita que una red distinta bloquee globalmente un correo. Una red compartida aún puede agotar su propio límite; se complementa ahora con Turnstile en cada nuevo acceso web. No equivale a segundo factor. Se devuelve Retry-After: 900. Regresión verificada con ataques dirigidos, rotación de correos y 20 alumnos en una misma red.
 - La biblioteca nativa, originales, MP4 y copias antiguas siguen siendo archivos normales. La migración por cuenta descrita corresponde a la web; no introduce cuentas nuevas en el instalable.
 - No se ha ejecutado el EXE en un Windows físico. Las pruebas nativas se realizaron en Mac con perfiles temporales. El cifrado de vídeo se verificó con varios bloques de un archivo sintético; no se utilizó un vídeo privado de 50 minutos.
 
@@ -48,3 +48,17 @@ Los instaladores conservan identidad, directorio de datos y clave pública de li
 El flujo «Seguridad» de GitHub Actions ejecuta las pruebas en cada envío a main, propuesta de cambio y ejecución manual. Compila la web, revisa dependencias conocidas (falla ante gravedad alta o crítica), y prueba entradas maliciosas, permisos del puente, licencias, caducidad y límites de acceso, así como cifrado y migración en Chromium y WebKit. Utiliza bases SQLite temporales, claves generadas para la prueba y direcciones ficticias interceptadas por el navegador; no solicita secretos de Cloudflare ni accede a los alumnos reales.
 
 Las acciones se fijan por identificador de commit, el permiso del flujo es de lectura y no se ejecutan scripts de instalación de las dependencias. No se publica la aplicación desde este flujo. Un fallo aparecerá en la pestaña Actions y en la propuesta de cambio, pero no bloquea por sí mismo el despliegue de Cloudflare: para imponer ese bloqueo hay que configurar las reglas de la rama o del despliegue. Tampoco sustituye una auditoría independiente o una prueba física de los instaladores.
+
+## Refuerzo frente a intentos distribuidos: Turnstile
+
+Cada inicio de sesión web exige un token de Turnstile validado por el servidor antes de consultar la contraseña. Se comprueban success, action=login y hostname exacto del sitio solicitado. Siteverify controla la caducidad y el uso único. Tokens ausentes, malformados, caducados, repetidos o de otro sitio no permiten entrar; una indisponibilidad o una configuración incompleta devuelve 503, sin desactivar la protección. Los límites por IP y correo/IP siguen aplicándose antes de llamar al servicio.
+
+El widget gestionado está restringido a elorrietatrack.admobility26.workers.dev. Su clave pública está en wrangler; el secreto se guarda en Cloudflare Secrets y en la carpeta privada de la instalación, nunca en GitHub ni en el navegador. La CSP web permite únicamente el dominio oficial challenges.cloudflare.com para scripts y frames. La política de escritorio no se amplía. No se modifican licencias ni datos ni se regeneran instaladores.
+
+El formulario espera una comprobación válida, limpia el token al caducar y solicita otro tras un intento fallido. Hay reintento si un bloqueador o una incidencia de red impide cargar el widget. Las sesiones abiertas no se invalidan por esta actualización. Turnstile trata datos técnicos del navegador e IP; la llamada de validación no envía correo ni contraseña a Siteverify. No se configura aquí analítica propia de visitantes.
+
+Regresión: peticiones desde 20 IP distintas no pueden omitir el desafío; pruebas del Worker con respuestas simuladas de Siteverify; controles de error, acción, dominio, caducidad y repetición; formulario compilado con CSP en Chromium y WebKit. Las pruebas simuladas no certifican la capacidad de Cloudflare para detectar todos los bots. Turnstile eleva el coste del ataque automatizado, pero no impide por sí solo ataques humanos, servicios de resolución de desafíos o el uso de una contraseña robada; el segundo factor sigue siendo una mejora posible.
+
+La migración a dominio propio requiere añadir primero el nuevo hostname al mismo widget, sin retirar workers.dev. El comando de migración detiene --apply hasta que se confirme ese paso con --turnstile-ready, para evitar un despliegue donde nadie pueda identificarse. No se desactiva el desafío para facilitar la migración.
+
+Fuentes: https://developers.cloudflare.com/turnstile/get-started/server-side-validation/ y https://developers.cloudflare.com/turnstile/reference/content-security-policy/.

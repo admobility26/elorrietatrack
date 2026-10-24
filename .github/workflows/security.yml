@@ -40,3 +40,5 @@ jobs:
         run: npm run build
       - name: Probar seguridad con cuentas y claves ficticias
         run: npm run test:security
+      - name: Probar inicio de sesión protegido en Chromium y WebKit
+        run: node tests/login-challenge-ui.mjs

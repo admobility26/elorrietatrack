@@ -1,3 +1,4 @@
+import {challengeEnabled,verifyLoginChallenge} from './login-challenge.js';
 import {readJSON} from './request.js';
 import contentSecurity from './security-policy.js';
 import {accessExpired,accessExpiry,NO_EXPIRY} from './accessPolicy.js';
@@ -34,6 +35,7 @@ async function limited(env,key,maximum){
 }
 const tooMany=()=>json({error:'Demasiados intentos desde esta conexión. Espera 15 minutos.'},429,{'Retry-After':'900'});
 async function api(request,env,path){
+ if(path==='/api/login-config'&&request.method==='GET')return json({challengeRequired:challengeEnabled(env),sitekey:env.TURNSTILE_SITE_KEY||null});
  if(path.startsWith('/api/license/')&&request.method==='POST')return licenseAPI(request,env,path,json);
  if(request.method!=='GET'&&request.headers.get('Origin')!==new URL(request.url).origin)return json({error:'Origen no permitido.'},403);
  if(path==='/api/login'&&request.method==='POST'){
@@ -43,6 +45,7 @@ async function api(request,env,path){
   for(const key of [`ip:${ip}`,`account-ip:${JSON.stringify([email,ip])}`]){
    if(await limited(env,key,key.startsWith('ip:')?120:15))return tooMany();
   }
+  await verifyLoginChallenge(request,env,b.challengeToken);
   const u=await env.AUTH.prepare('SELECT * FROM users WHERE email=?').bind(email).first();
   const ok=await verifyPassword(typeof b.password==='string'?b.password.slice(0,129):'',u?.password_hash||'pbkdf2:100000:dummy:0000000000000000000000000000000000000000000000000000000000000000');
   if(!u||!u.active||!ok)return json({error:'Correo o contraseña incorrectos, o acceso desactivado.'},401);
@@ -119,5 +122,5 @@ export default {
   let response=await env.ASSETS.fetch(request);
   const headers=new Headers(response.headers);headers.set('Cache-Control','no-store');headers.set('X-Content-Type-Options','nosniff');headers.set('Referrer-Policy','strict-origin-when-cross-origin');headers.set('X-Frame-Options','SAMEORIGIN');headers.set('Content-Security-Policy',contentSecurity);headers.set('Permissions-Policy','camera=(), microphone=(self), geolocation=(self)');
   return new Response(response.body,{status:response.status,headers});
- }catch(error){console.error('Auth request failed',error.name);return json({error:error.status?error.message:'No se pudo completar la operación. Inténtalo de nuevo.'},error.status||500);}
+ }catch(error){if(!error.status||error.status>=500)console.error('Auth request failed',error.name);return json({error:error.status?error.message:'No se pudo completar la operación. Inténtalo de nuevo.'},error.status||500);}
 }};

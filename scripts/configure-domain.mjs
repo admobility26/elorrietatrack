@@ -2,11 +2,12 @@ import './check-new-installation.mjs';
 import fs from 'node:fs/promises';import path from 'node:path';import {fileURLToPath} from 'node:url';import {spawnSync} from 'node:child_process';
 import {domainConfiguration} from './domain-config.mjs';
 const args=process.argv.slice(2),input=args.find(a=>!a.startsWith('--'));
-if(!input||args.some(a=>a.startsWith('--')&&a!=='--apply'))throw Error('Uso: npm run domain -- app.tudominio.com [--apply]');
+if(!input||args.some(a=>a.startsWith('--')&&!['--apply','--turnstile-ready'].includes(a)))throw Error('Uso: npm run domain -- app.tudominio.com [--apply] [--turnstile-ready]');
 const root=new URL('..',import.meta.url),file=new URL('../wrangler.jsonc',import.meta.url),original=await fs.readFile(file,'utf8'),current=JSON.parse(original);
 const {config:connected,origin}=domainConfiguration(current,input),{config:active}=domainConfiguration(current,input,{activate:true});
 console.log('Dominio propuesto: '+origin+'\nSe conservarán Worker, cuenta, base D1, firma de licencias y dirección workers.dev.\nLa zona DNS debe estar activa en esta cuenta. No se compra ni se registra el dominio.\nAntes del cambio: exportar bibliotecas web y conservar vídeos/GPX originales; iniciar sesión y volver a autorizar carpetas en el dominio nuevo.');
 if(!args.includes('--apply')){console.log('Vista previa: no se ha cambiado ningún archivo ni recurso remoto.');process.exit(0);}
+if(current.vars?.TURNSTILE_SITE_KEY&&!args.includes('--turnstile-ready'))throw Error('Antes de migrar, añade el nuevo dominio al widget Turnstile de esta cuenta, conservando workers.dev. Después repite con --apply --turnstile-ready. No se ha modificado ningún archivo ni recurso remoto.');
 function run(args){const r=spawnSync('npx',['wrangler',...args],{cwd:root,stdio:'inherit'});if(r.status!==0)throw Error('No se completó: wrangler '+args[0]);}
 const backup=new URL('../.tmp/domain-backups/'+new Date().toISOString().replaceAll(':','-')+'/',import.meta.url);
 await fs.mkdir(backup,{recursive:true,mode:0o700});

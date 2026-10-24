@@ -1,3 +1,4 @@
+import LoginChallenge from './LoginChallenge.jsx';
 import {parseLicenseDate,licenseExpiryLabel,NO_EXPIRY} from './licenseFields.js';
 import HomeLogo from './HomeLogo.jsx';
 import HelpControls from './HelpControls.jsx';
@@ -16,13 +17,16 @@ export async function accountRequest(path,options={}){
 }
 const announce=()=>{const channel=new BroadcastChannel('elorrietatrack-access');channel.postMessage('changed');channel.close();};
 export function Login({onLogin}){
- const [language,setLanguage]=useState('eu'),[busy,setBusy]=useState(false),[error,setError]=useState('');const t=(eu,es)=>language==='eu'?eu:es;
- return <main className="access-page"><form className="access-card" onSubmit={async e=>{e.preventDefault();setBusy(true);setError('');const data=new FormData(e.currentTarget);try{const r=await accountRequest('login',{method:'POST',body:JSON.stringify(Object.fromEntries(data))});announce();onLogin(r.user,language);}catch(e){setError(e.message);}finally{setBusy(false);}}}>
+ const [language,setLanguage]=useState('eu'),[busy,setBusy]=useState(false),[error,setError]=useState(''),[config,setConfig]=useState(null),[challengeToken,setChallengeToken]=useState(''),[revision,setRevision]=useState(0),[configRetry,setConfigRetry]=useState(0);const t=(eu,es)=>language==='eu'?eu:es;
+ useEffect(()=>{let cancelled=false;setError('');void accountRequest('login-config').then(r=>{if(!cancelled)setConfig(r);}).catch(()=>{if(!cancelled)setError(t('Ezin izan da sarbidea prestatu. Saiatu berriro.','No se pudo preparar el acceso. Vuelve a intentarlo.'));});return()=>{cancelled=true;};},[configRetry]);
+ return <main className="access-page"><form className="access-card" onSubmit={async e=>{e.preventDefault();setBusy(true);setError('');const data=new FormData(e.currentTarget);try{const r=await accountRequest('login',{method:'POST',body:JSON.stringify({...Object.fromEntries(data),challengeToken})});announce();onLogin(r.user,language);}catch(e){setError(e.message);setChallengeToken('');setRevision(n=>n+1);}finally{setBusy(false);}}}>
  <label className="access-language">Hizkuntza / Idioma <select value={language} onChange={e=>setLanguage(e.target.value)}><option value="eu">Euskara</option><option value="es">Castellano</option></select></label>
  <span className="access-brand"><HomeLogo language={language}/>RutasElorrieta</span><h1>{t('Zure kontuan sartu','Accede a tu cuenta')}</h1><p>{t('Administratzaileak baimendutako erabiltzaileentzat.','Para usuarios autorizados por el administrador.')}</p>
  <label>{t('Posta elektronikoa','Correo electrónico')}<input name="email" type="email" autoComplete="username" required maxLength={254}/></label>
  <label>{t('Pasahitza edo PINa','Contraseña o PIN')}<input name="password" type="password" autoComplete="current-password" required maxLength={128}/></label>
- {error&&<p role="alert">{error}</p>}<button disabled={busy} type="submit">{busy?t('Sartzen…','Accediendo…'):t('Sartu','Entrar')}</button>
+ {config?.challengeRequired&&<LoginChallenge sitekey={config.sitekey} onToken={setChallengeToken} onError={setError} language={language} revision={revision}/>}
+ {!config&&error&&<button type="button" onClick={()=>setConfigRetry(n=>n+1)}>{t('Berriro saiatu','Reintentar')}</button>}
+ {error&&<p role="alert">{error}</p>}<button disabled={busy||!config||(config.challengeRequired&&!challengeToken)} type="submit">{busy?t('Sartzen…','Accediendo…'):t('Sartu','Entrar')}</button>
  <small>{t('Sarbiderik ez baduzu edo pasahitza ahaztu baduzu, jarri administratzailearekin harremanetan.','Si necesitas acceso o has olvidado tu contraseña, contacta con el administrador.')}</small>
  <HelpControls language={language}/><LegalNotice language={language}/></form></main>;
 }

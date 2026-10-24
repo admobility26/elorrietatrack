@@ -39,3 +39,7 @@ Referencias oficiales:
 - https://developers.cloudflare.com/workers/configuration/routing/custom-domains/
 - https://developers.cloudflare.com/workers/wrangler/configuration/
 - https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
+
+### Verificación de acceso Turnstile
+
+Antes de aplicar un dominio nuevo, abre la cuenta Cloudflare admobility26 → Turnstile → «RutasElorrieta - acceso web estable» y añade el hostname nuevo a los permitidos. Conserva el hostname workers.dev y el mismo widget y secreto. Solo entonces usa `npm run domain -- app.tudominio.com --apply --turnstile-ready`. El comando se detiene antes de cambiar recursos si falta esta confirmación. Prueba el acceso real desde ambos dominios al terminar. El secreto no se pone en GitHub ni en los instaladores.
