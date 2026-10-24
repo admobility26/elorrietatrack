@@ -23,7 +23,7 @@
     "test:assembly": "node tests/review-assembly.mjs && node tests/assembly-movie.mjs && node tests/assembly-workspace.mjs",
     "test:fast": "node tests/fast-movie.mjs",
     "test:web-expiry": "node tests/web-expiry.mjs && node tests/web-expiry-ui.mjs",
-    "test:security": "node tests/security-hardening.mjs && node tests/licensing.mjs && node tests/local-vault.mjs"
+    "test:security": "node tests/security-hardening.mjs && node tests/licensing.mjs && node tests/web-expiry.mjs && node tests/local-vault.mjs"
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "^8.3.0",

@@ -42,3 +42,9 @@ El cifrado protege datos cerrados frente a otras cuentas; no protege una sesión
 Pruebas: inyección, validación, emisor/frame/licencia y permisos, firmas y activaciones, caducidad web, migración de datos, Chrome y WebKit para el cifrado, cambio de clave, importación/exportación cifrada, recuperación tras contraseña errónea, migración bloqueada por otra conexión y reintento, biblioteca y creación de alumno en la web compilada con CSP, y grabación/exportación MP4 de escritorio.
 
 Los instaladores conservan identidad, directorio de datos y clave pública de licencias. Las instalaciones ya entregadas deben actualizarse para recibir el nuevo motor Electron. No se cambia la clave privada del servidor ni se regeneran licencias existentes.
+
+## Comprobación continua
+
+El flujo «Seguridad» de GitHub Actions ejecuta las pruebas en cada envío a main, propuesta de cambio y ejecución manual. Compila la web, revisa dependencias conocidas (falla ante gravedad alta o crítica), y prueba entradas maliciosas, permisos del puente, licencias, caducidad y límites de acceso, así como cifrado y migración en Chromium y WebKit. Utiliza bases SQLite temporales, claves generadas para la prueba y direcciones ficticias interceptadas por el navegador; no solicita secretos de Cloudflare ni accede a los alumnos reales.
+
+Las acciones se fijan por identificador de commit, el permiso del flujo es de lectura y no se ejecutan scripts de instalación de las dependencias. No se publica la aplicación desde este flujo. Un fallo aparecerá en la pestaña Actions y en la propuesta de cambio, pero no bloquea por sí mismo el despliegue de Cloudflare: para imponer ese bloqueo hay que configurar las reglas de la rama o del despliegue. Tampoco sustituye una auditoría independiente o una prueba física de los instaladores.

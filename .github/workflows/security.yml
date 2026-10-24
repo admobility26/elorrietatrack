@@ -1,0 +1,42 @@
+name: Seguridad
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# No production credentials or write access are needed by these tests.
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    name: Accesos, licencias y cifrado
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Instalar dependencias sin ejecutar scripts de paquetes
+        run: npm ci --ignore-scripts
+      - name: Revisar vulnerabilidades conocidas
+        run: npm audit --audit-level=high
+      - name: Preparar navegadores de prueba
+        run: npx --no-install playwright install --with-deps chromium webkit
+      - name: Compilar la web
+        run: npm run build
+      - name: Probar seguridad con cuentas y claves ficticias
+        run: npm run test:security
