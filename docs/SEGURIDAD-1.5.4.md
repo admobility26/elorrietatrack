@@ -31,7 +31,7 @@ El cifrado protege datos cerrados frente a otras cuentas; no protege una sesión
 ## Pendiente o limitado
 
 - Firma comercial Authenticode y notarización Apple: requieren certificados y credenciales del editor. El paquete Mac tiene firma ad hoc de integridad, que no acredita un editor ante Apple. Windows sigue sin firma comercial.
-- El bloqueo temporal por intentos dirigidos contra un correo necesita un mecanismo adicional de desafío o segundo factor; las nuevas medidas de abuso no se presentan como solución completa de ese hallazgo.
+- Corrección posterior: el límite de 15 intentos por 15 minutos se vincula al correo y la IP, además del límite general de 120 intentos por IP. Evita que una red distinta bloquee globalmente un correo. Una red compartida aún puede agotar su propio límite; no sustituye un desafío gestionado o segundo factor frente a ataques distribuidos. Se devuelve Retry-After: 900. Regresión verificada con ataques dirigidos, rotación de correos y 20 alumnos en una misma red.
 - La biblioteca nativa, originales, MP4 y copias antiguas siguen siendo archivos normales. La migración por cuenta descrita corresponde a la web; no introduce cuentas nuevas en el instalable.
 - No se ha ejecutado el EXE en un Windows físico. Las pruebas nativas se realizaron en Mac con perfiles temporales. El cifrado de vídeo se verificó con varios bloques de un archivo sintético; no se utilizó un vídeo privado de 50 minutos.
 

@@ -33,10 +33,11 @@ async function api(request,env,path){
  if(path==='/api/login'&&request.method==='POST'){
   const b=await body(request),email=typeof b.email==='string'?b.email.trim().toLowerCase():'';
   const ip=request.headers.get('CF-Connecting-IP')||'local';
-  for(const key of [`ip:${ip}`,`email:${email}`]){
+  // Scope account throttling to its source so another network cannot lock out the owner.
+  for(const key of [`ip:${ip}`,`account-ip:${JSON.stringify([email,ip])}`]){
    const bucket=await digest(key),now=Date.now();
    const limit=await env.AUTH.prepare('INSERT INTO login_limits(bucket,attempts,until_at) VALUES(?,1,?) ON CONFLICT(bucket) DO UPDATE SET attempts=CASE WHEN until_at<? THEN 1 ELSE attempts+1 END, until_at=CASE WHEN until_at<? THEN excluded.until_at ELSE until_at END RETURNING attempts').bind(bucket,now+900000,now,now).first();
-   if(limit.attempts>(key.startsWith('ip:')?120:15))return json({error:'Demasiados intentos. Espera 15 minutos.'},429);
+   if(limit.attempts>(key.startsWith('ip:')?120:15))return json({error:'Demasiados intentos desde esta conexión. Espera 15 minutos.'},429,{'Retry-After':'900'});
   }
   const u=await env.AUTH.prepare('SELECT * FROM users WHERE email=?').bind(email).first();
   const ok=await verifyPassword(typeof b.password==='string'?b.password.slice(0,129):'',u?.password_hash||'pbkdf2:100000:dummy:0000000000000000000000000000000000000000000000000000000000000000');
