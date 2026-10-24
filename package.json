@@ -1,6 +1,6 @@
 {
   "name": "elorrieta-track",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
@@ -46,7 +46,7 @@
   },
   "build": {
     "appId": "com.admobility26.elorrietatrack",
-    "productName": "ElorrietaTrack Estable",
+    "productName": "RutasElorrieta",
     "asar": true,
     "directories": {
       "output": "release",
@@ -70,13 +70,13 @@
       "icon": "build/icon.icns",
       "identity": null,
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "ElorrietaTrack usa el micrófono si eliges grabar una explicación.",
-        "NSBluetoothAlwaysUsageDescription": "ElorrietaTrack Premium usa Bluetooth para conectar con RaceBox Mini o Mini S y recibir los datos de la práctica."
+        "NSMicrophoneUsageDescription": "RutasElorrieta usa el micr\u00f3fono si eliges grabar una explicaci\u00f3n.",
+        "NSBluetoothAlwaysUsageDescription": "RutasElorrieta Premium usa Bluetooth para conectar con RaceBox Mini o Mini S y recibir los datos de la pr\u00e1ctica."
       }
     },
     "dmg": {
-      "title": "ElorrietaTrack Estable",
-      "artifactName": "ElorrietaTrack-Estable-${version}-Mac-AppleSilicon.dmg",
+      "title": "RutasElorrieta",
+      "artifactName": "RutasElorrieta-${version}-Mac-AppleSilicon.dmg",
       "contents": [
         {
           "x": 140,
@@ -91,7 +91,7 @@
         }
       ]
     },
-    "copyright": "Copyright © 2026 Aitor Delgado Martínez · AD Mobility",
+    "copyright": "Copyright \u00a9 2026 Aitor Delgado Mart\u00ednez \u00b7 AD Mobility",
     "win": {
       "target": [
         {
@@ -110,12 +110,12 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "artifactName": "ElorrietaTrack-Estable-${version}-Windows-x64-Setup.${ext}",
+      "artifactName": "RutasElorrieta-${version}-Windows-x64-Setup.${ext}",
       "deleteAppDataOnUninstall": false
     },
     "afterPack": "scripts/after-pack.cjs"
   },
   "license": "SEE LICENSE IN LICENSE",
-  "author": "Aitor Delgado Martínez (AD Mobility)",
-  "description": "ElorrietaTrack: trayectorias y pizarra didáctica para formación vial"
+  "author": "Aitor Delgado Mart\u00ednez (AD Mobility)",
+  "description": "RutasElorrieta: trayectorias y pizarra did\u00e1ctica para formaci\u00f3n vial"
 }

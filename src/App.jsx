@@ -1407,7 +1407,7 @@ export default function App() {
         desktop: true
       };
       setFolderName('Vídeos MP4 de Traza');
-      setExportMessage('Los vídeos se guardarán en Documentos/ElorrietaTrack/Vídeos MP4.');
+      setExportMessage('Los vídeos se guardarán en Documentos/elorrietatrac/Vídeos MP4.');
       return;
     }
     if (!window.showDirectoryPicker) {
@@ -1561,7 +1561,7 @@ export default function App() {
         try {
           if (folderRef.current?.desktop && window.elorrietaDesktop) {
             await window.elorrietaDesktop.saveVideo(fileName, await blob.arrayBuffer());
-            setExportMessage(`Vídeo guardado en Documentos/ElorrietaTrack/Vídeos MP4: ${fileName}`);
+            setExportMessage(`Vídeo guardado en Documentos/elorrietatrac/Vídeos MP4: ${fileName}`);
           } else if (folderRef.current) {
             const file = await folderRef.current.getFileHandle(fileName, {
               create: true
@@ -1965,7 +1965,7 @@ export default function App() {
       setBoardSeed(null);
     }} />}
     <LegacyImport /><header className="topbar">
-      <div className="brand"><HomeLogo className="institution-logo" language={language}/><div><div className="brand-name">ElorrietaTrack</div><div className="brand-subtitle">Trayectorias y pizarra didáctica</div></div></div>
+      <div className="brand"><HomeLogo className="institution-logo" language={language}/><div><div className="brand-name">RutasElorrieta</div><div className="brand-subtitle">Trayectorias y pizarra didáctica</div></div></div>
       <div className="topbar-right"><AutosaveStatus language={language} /><HelpControls language={language}/><AccountControls language={language} disabled={recording || false} /><button className="library-launch" disabled={recording || false} onClick={showLibrary}>▤ {t("Liburutegia", "Biblioteca")}</button><span className="map-status"><i className={mapReady && !mapError ? 'status-dot ready' : 'status-dot'} />{rasterLabel(mapProvider)}</span><button className="icon-button" title="Centrar en Bizkaia" onClick={() => mapRef.current?.flyTo({
           center: START,
           zoom: 10.1,

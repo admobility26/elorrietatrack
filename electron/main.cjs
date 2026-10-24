@@ -7,7 +7,7 @@ const { pathToFileURL } = require('node:url');
 const organized=require('./organized-storage.cjs');
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'elorrietatrack', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } }]);
-app.setName('ElorrietaTrack');
+app.setName('RutasElorrieta');
 
 const dataDirectory = require('./data-directory.cjs')(app.getPath('documents'));
 const libraryPath = path.join(dataDirectory, 'Biblioteca de recorridos.json');
@@ -34,7 +34,7 @@ function ensureDataDirectories() {
 let workspaceDirectory=null;
 const movieWrites=new Map();
 function workspaceFile(name){if(!workspaceDirectory||typeof name!=='string'||name!==path.basename(name)||name.includes('\\'))throw Error('Archivo fuera de la carpeta de trabajo.');return path.join(workspaceDirectory,name);}
-ipcMain.handle('workspace:choose',async()=>{const result=await dialog.showOpenDialog({title:'Carpeta de la clase · ElorrietaTrack Premium',properties:['openDirectory']});if(result.canceled)return null;workspaceDirectory=result.filePaths[0];const entries=await fs.promises.readdir(workspaceDirectory,{withFileTypes:true});const files=[];for(const e of entries)if(e.isFile())files.push({name:e.name,size:(await fs.promises.stat(path.join(workspaceDirectory,e.name))).size});return {name:path.basename(workspaceDirectory),files};});
+ipcMain.handle('workspace:choose',async()=>{const result=await dialog.showOpenDialog({title:'Carpeta de la clase · RutasElorrieta Premium',properties:['openDirectory']});if(result.canceled)return null;workspaceDirectory=result.filePaths[0];const entries=await fs.promises.readdir(workspaceDirectory,{withFileTypes:true});const files=[];for(const e of entries)if(e.isFile())files.push({name:e.name,size:(await fs.promises.stat(path.join(workspaceDirectory,e.name))).size});return {name:path.basename(workspaceDirectory),files};});
 ipcMain.handle('workspace:check-media',async(_event,name,size)=>{try{const info=await fs.promises.stat(workspaceFile(name));if(!info.isFile()||info.size!==size)throw Error('changed');return true;}catch{throw Error('No se encuentra el vídeo original o ha cambiado. Si has renombrado o movido la carpeta, pulsa Abrir carpeta y selecciona su ubicación actual.');}});
 ipcMain.handle('workspace:read-text',async(_event,name)=>{if(!/\.(gpx|json)$/i.test(name))throw Error('Solo se leen proyectos JSON y tracks GPX.');return fs.promises.readFile(workspaceFile(name),'utf8');});
 ipcMain.handle('workspace:write-project',async(_event,text)=>{const target=workspaceFile('ElorrietaTrack Premium-proyecto.json');const parsed=JSON.parse(text);if(parsed.format!=='elorrietatrack-premium-project')throw Error('Proyecto inválido.');const temporary=target+'.tmp';await fs.promises.writeFile(temporary,text,'utf8');await fs.promises.rename(temporary,target);});
@@ -118,7 +118,7 @@ app.on('before-quit',()=>{quitting=true;});
 ipcMain.on('autosave:close-ready',(event,result)=>{
  const pending=closingWindows.get(event.sender.id);if(!pending||result?.id!==pending.id)return;
  if(result.ok===true){pending.ready=true;pending.window.close();if(quitting)app.quit();}
- else{closingWindows.delete(event.sender.id);quitting=false;void dialog.showMessageBox(pending.window,{type:'error',title:'No se pudo guardar',message:'ElorrietaTrack sigue abierta para proteger tu trabajo.',detail:String(result?.error||'Revisa el espacio y los permisos de la carpeta e inténtalo de nuevo.').slice(0,1000)});}
+ else{closingWindows.delete(event.sender.id);quitting=false;void dialog.showMessageBox(pending.window,{type:'error',title:'No se pudo guardar',message:'RutasElorrieta sigue abierta para proteger tu trabajo.',detail:String(result?.error||'Revisa el espacio y los permisos de la carpeta e inténtalo de nuevo.').slice(0,1000)});}
 });
 async function createWindow() {
   ensureDataDirectories();
@@ -127,7 +127,7 @@ async function createWindow() {
     height: 960,
     minWidth: 1050,
     minHeight: 720,
-    title: 'ElorrietaTrack',
+    title: 'RutasElorrieta',
     backgroundColor: '#f5f6f3',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -144,7 +144,7 @@ async function createWindow() {
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:\/\//i.test(url)||url.startsWith('mailto:admobility26@gmail.com')) shell.openExternal(url);
     if(/^elorrietatrack:\/\/app\/(licencia\.html|THIRD-PARTY-NOTICES\.txt|LICENSE\.txt|runtime-licenses\.html)$/.test(url)){
-      const child=new BrowserWindow({parent:window,width:1000,height:800,title:'ElorrietaTrack · Créditos',webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false}});
+      const child=new BrowserWindow({parent:window,width:1000,height:800,title:'RutasElorrieta · Créditos',webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false}});
       child.webContents.setWindowOpenHandler(({url:next})=>{if(/^https?:\/\//i.test(next)||next.startsWith('mailto:admobility26@gmail.com'))shell.openExternal(next);else if(/^elorrietatrack:\/\/app\/(runtime-licenses\.html|THIRD-PARTY-NOTICES\.txt|LICENSE\.txt)$/.test(next))child.loadURL(next);return {action:'deny'};});
       child.webContents.on('will-navigate',(event,next)=>{if(/^https?:\/\//i.test(next)||next.startsWith('mailto:')){event.preventDefault();if(/^https?:\/\//i.test(next)||next.startsWith('mailto:admobility26@gmail.com'))shell.openExternal(next);}});
       void child.loadURL(url);

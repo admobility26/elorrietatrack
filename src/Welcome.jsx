@@ -12,7 +12,7 @@ export default function Welcome({ onEnter }) {
     <main className="welcome-page">
       <div className="welcome-card">
         <section className="welcome-copy">
-          <div className="welcome-brand"><HomeLogo className="welcome-institution-logo" language={language}/><span>ElorrietaTrack</span></div>
+          <div className="welcome-brand"><HomeLogo className="welcome-institution-logo" language={language}/><span>RutasElorrieta</span></div>
           <label>Hizkuntza / Idioma <select value={language} onChange={e=>{setLanguage(e.target.value);localStorage.setItem('elorrietatrack-language',e.target.value);}}><option value="eu">Euskara</option><option value="es">Castellano</option></select></label><div className="welcome-heading">
             <span className="welcome-eyebrow">{t('PRESTAKUNTZA ETA BIDE SEGURTASUNA','FORMACIÓN Y SEGURIDAD VIAL')}</span>
             <h1>{t('Ikasten laguntzen duten ibilbideak.','Recorridos que ayudan a aprender.')}</h1>
@@ -26,7 +26,7 @@ export default function Welcome({ onEnter }) {
           <div className="welcome-art-caption"><span>{t('PRESTAKUNTZA','FORMACIÓN')}</span><span>·</span><span>{t('BIDE AUDITORIA','AUDITORÍA VIAL')}</span></div>
         </aside>
       </div>
-      <footer className="welcome-footer"><span>ElorrietaTrack</span><span>GeoEuskadi · PNOA · OpenStreetMap</span></footer>
+      <footer className="welcome-footer"><span>RutasElorrieta</span><span>GeoEuskadi · PNOA · OpenStreetMap</span></footer>
     </main>
   );
 }

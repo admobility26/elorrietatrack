@@ -69,11 +69,11 @@ Las condiciones de servicios externos pueden cambiar; consultar los enlaces de o
 
 Búsqueda de lugares: CartoCiudad / IGN-CNIG. CC BY 4.0 www.scne.es/productos.html#CartoCiudad. Servicio gratuito de búsqueda de municipios y direcciones de España; requiere conexión. Las búsquedas se envían únicamente al pulsar Buscar o seleccionar un resultado.
 
-AVISOS DE COMPONENTES DE TERCEROS — ElorrietaTrack
+AVISOS DE COMPONENTES DE TERCEROS — RutasElorrieta
 
-La licencia propia de ElorrietaTrack solo se aplica a las aportaciones originales de su
+La licencia propia de RutasElorrieta solo se aplica a las aportaciones originales de su
 titular. Los siguientes componentes conservan sus derechos y condiciones propios.
-Las restricciones no comerciales de ElorrietaTrack no se extienden a código de terceros.
+Las restricciones no comerciales de RutasElorrieta no se extienden a código de terceros.
 Este inventario incluye dependencias de ejecución declaradas en package-lock.json;
 algunas son herramientas o componentes nativos y no se incluyen en el navegador.
 
