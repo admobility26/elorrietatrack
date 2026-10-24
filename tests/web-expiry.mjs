@@ -22,4 +22,16 @@ try{
  for(let i=0;i<120;i++)assert.equal((await request('/api/login',{cookie:null,ip:'192.0.2.92',body:{email:'unknown-'+i+'@example.invalid',password:'wrong-password'}})).status,401);
  assert.equal((await request('/api/login',{cookie:null,ip:'192.0.2.92',body:{email:'another@example.invalid',password:'wrong-password'}})).status,429);
  console.log('PASS login throttling: targeted failures cannot lock another network; account/source and total/source limits remain enforced with Retry-After.');
+ assert.equal((await request('/api/admin/users',{body:{email:123,password:'test-password',expiresAt:NO_EXPIRY}})).status,400);
+ const passwordToken='password-test';db.prepare('INSERT INTO sessions VALUES(?,?,?)').run(await digest(passwordToken),user.id,Date.now()+3600000);
+ assert.equal((await request('/api/password',{cookie:passwordToken,body:{currentPassword:{},password:'replacement-password'}})).status,400);
+ for(let i=0;i<10;i++)assert.equal((await request('/api/password',{cookie:passwordToken,body:{currentPassword:'wrong-password',password:'replacement-password'}})).status,400);
+ const lockedChange=await request('/api/password',{cookie:passwordToken,body:{currentPassword:'test-password',password:'replacement-password'}});assert.equal(lockedChange.status,429);assert.equal(lockedChange.headers.get('Retry-After'),'900');
+ assert.equal(db.prepare('SELECT count(*) AS n FROM sessions WHERE token_hash=?').get(await digest(passwordToken)).n,1);
+ db.prepare('UPDATE login_limits SET until_at=? WHERE bucket=?').run(Date.now()-1,await digest('password-change:'+user.id));
+ assert.equal((await request('/api/password',{cookie:passwordToken,body:{currentPassword:'test-password',password:'replacement-password'}})).status,200);
+ assert.equal((await request('/api/me',{cookie:passwordToken})).status,401);
+ assert.equal((await request('/api/login',{cookie:null,ip:'192.0.2.93',body:{email:user.email,password:'test-password'}})).status,401);
+ assert.equal((await request('/api/login',{cookie:null,ip:'192.0.2.93',body:{email:user.email,password:'replacement-password'}})).status,200);
+ console.log('PASS password changes: malformed inputs rejected, account-wide attempt limit, expiry recovery, successful change revokes all old sessions and password.');
 }finally{db.close();await fs.unlink(file);}

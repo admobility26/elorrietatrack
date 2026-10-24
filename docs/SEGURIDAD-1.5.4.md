@@ -14,6 +14,8 @@ Primer bloque de correcciones de la auditoría del 24/10/2026. Solo corresponde 
 - Lectura de JSON limitada por bytes, incluso sin Content-Length; respuestas 400/413. Límite de comprobaciones de licencia por IP y limpieza horaria de sesiones, límites y nonces caducados.
 - Fuses de integridad ASAR y carga exclusiva de ASAR activados; desactivadas opciones de Node del entorno, inspección del proceso principal, ejecución como Node y privilegios extra del protocolo file.
 
+- Refuerzo posterior: cambio de contraseña limitado a 10 intentos por cuenta en 15 minutos, compartido entre sus sesiones. Entradas con tipos incorrectos se rechazan con 400. Verificado que un cambio correcto revoca las sesiones anteriores y que la contraseña antigua deja de funcionar.
+
 ## Datos privados de la web
 
 Los datos permanecen en el equipo. Cada cuenta crea una clave de datos independiente de su contraseña de acceso. PBKDF2-SHA-256 con 600.000 iteraciones y sal aleatoria deriva una clave para proteger la clave aleatoria AES-GCM de la biblioteca. Las claves operativas solo permanecen en memoria mientras se utiliza la biblioteca. No se envían claves de datos ni contenido privado al servidor.

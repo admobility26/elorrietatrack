@@ -27,6 +27,12 @@ async function identity(request,env){
 const body=readJSON;
 const validEmail=e=>typeof e==='string'&&e.length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 const validPassword=p=>typeof p==='string'&&p.length>=8&&p.length<=128;
+async function limited(env,key,maximum){
+ const bucket=await digest(key),now=Date.now();
+ const row=await env.AUTH.prepare('INSERT INTO login_limits(bucket,attempts,until_at) VALUES(?,1,?) ON CONFLICT(bucket) DO UPDATE SET attempts=CASE WHEN until_at<? THEN 1 ELSE attempts+1 END, until_at=CASE WHEN until_at<? THEN excluded.until_at ELSE until_at END RETURNING attempts').bind(bucket,now+900000,now,now).first();
+ return row.attempts>maximum;
+}
+const tooMany=()=>json({error:'Demasiados intentos desde esta conexión. Espera 15 minutos.'},429,{'Retry-After':'900'});
 async function api(request,env,path){
  if(path.startsWith('/api/license/')&&request.method==='POST')return licenseAPI(request,env,path,json);
  if(request.method!=='GET'&&request.headers.get('Origin')!==new URL(request.url).origin)return json({error:'Origen no permitido.'},403);
@@ -35,9 +41,7 @@ async function api(request,env,path){
   const ip=request.headers.get('CF-Connecting-IP')||'local';
   // Scope account throttling to its source so another network cannot lock out the owner.
   for(const key of [`ip:${ip}`,`account-ip:${JSON.stringify([email,ip])}`]){
-   const bucket=await digest(key),now=Date.now();
-   const limit=await env.AUTH.prepare('INSERT INTO login_limits(bucket,attempts,until_at) VALUES(?,1,?) ON CONFLICT(bucket) DO UPDATE SET attempts=CASE WHEN until_at<? THEN 1 ELSE attempts+1 END, until_at=CASE WHEN until_at<? THEN excluded.until_at ELSE until_at END RETURNING attempts').bind(bucket,now+900000,now,now).first();
-   if(limit.attempts>(key.startsWith('ip:')?120:15))return json({error:'Demasiados intentos desde esta conexión. Espera 15 minutos.'},429,{'Retry-After':'900'});
+   if(await limited(env,key,key.startsWith('ip:')?120:15))return tooMany();
   }
   const u=await env.AUTH.prepare('SELECT * FROM users WHERE email=?').bind(email).first();
   const ok=await verifyPassword(typeof b.password==='string'?b.password.slice(0,129):'',u?.password_hash||'pbkdf2:100000:dummy:0000000000000000000000000000000000000000000000000000000000000000');
@@ -58,7 +62,11 @@ async function api(request,env,path){
   return json({ok:true},200,{'Set-Cookie':cookie('',true)});
  }
  if(path==='/api/password'&&request.method==='POST'){
-  const b=await body(request);if(!validPassword(b.password)||!await verifyPassword(b.currentPassword||'',u.password_hash))return json({error:'Contraseña actual incorrecta o nueva contraseña de menos de 8 caracteres.'},400);
+  const b=await body(request);
+  if(!validPassword(b.password)||!validPassword(b.currentPassword))return json({error:'Introduce la contraseña actual y una nueva de entre 8 y 128 caracteres.'},400);
+  // Tie this sensitive operation to the account, across all of its sessions.
+  if(await limited(env,`password-change:${u.id}`,10))return tooMany();
+  if(!await verifyPassword(b.currentPassword,u.password_hash))return json({error:'Contraseña actual incorrecta.'},400);
   await env.AUTH.batch([env.AUTH.prepare('UPDATE users SET password_hash=? WHERE id=?').bind(await passwordHash(b.password),u.id),env.AUTH.prepare('DELETE FROM sessions WHERE user_id=?').bind(u.id)]);
   return json({ok:true},200,{'Set-Cookie':cookie('',true)});
  }
@@ -69,7 +77,7 @@ async function api(request,env,path){
    const {results}=await env.AUTH.prepare('SELECT id,email,role,plan,active,created_at,expires_at FROM users ORDER BY created_at').all();return json({users:results.map(publicUser)});
   }
   if(path==='/api/admin/users'&&request.method==='POST'){
-   const b=await body(request),email=b.email?.trim().toLowerCase();if(!validEmail(email)||!validPassword(b.password))return json({error:'Introduce un correo válido y una contraseña o PIN de al menos 8 caracteres.'},400);
+   const b=await body(request),email=typeof b.email==='string'?b.email.trim().toLowerCase():'';if(!validEmail(email)||!validPassword(b.password))return json({error:'Introduce un correo válido y una contraseña o PIN de al menos 8 caracteres.'},400);
    let expiresAt;try{expiresAt=accessExpiry(b.expiresAt);}catch(e){return json({error:e.message},400);}
    const id=crypto.randomUUID(),hash=await passwordHash(b.password);
    const r=await env.AUTH.prepare('INSERT OR IGNORE INTO users(id,email,password_hash,created_at,plan,expires_at) VALUES(?,?,?,?,?,?)').bind(id,email,hash,Date.now(),b.plan==='premium'?'premium':'basic',expiresAt).run();
