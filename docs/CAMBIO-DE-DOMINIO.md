@@ -12,7 +12,7 @@ Los proyectos web se guardan por dirección y cuenta en cada navegador. Cambiar 
 
 Como el cambio se realizará antes de incorporar clientes, sólo hay que revisar las bibliotecas de prueba del administrador y los archivos locales que interese conservar. El inicio de sesión nuevo no recupera por sí solo esos proyectos.
 
-Los instaladores Estable 1.3.2 conservan su perfil y archivos en Documentos/elorrietatrac. Mantener la misma identidad de aplicación y carpeta en futuras actualizaciones. No hace falta reinstalarlos para conectar el dominio.
+Los instaladores Estable 1.3.2 conservan su perfil y archivos en Documentos/RutasElorrieta. Mantener la misma identidad de aplicación y carpeta en futuras actualizaciones. No hace falta reinstalarlos para conectar el dominio.
 
 ## Procedimiento cuando se contrate el dominio
 

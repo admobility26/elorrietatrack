@@ -1,6 +1,6 @@
 {
   "name": "elorrieta-track",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
@@ -70,8 +70,8 @@
       "icon": "build/icon.icns",
       "identity": null,
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "RutasElorrieta usa el micr\u00f3fono si eliges grabar una explicaci\u00f3n.",
-        "NSBluetoothAlwaysUsageDescription": "RutasElorrieta Premium usa Bluetooth para conectar con RaceBox Mini o Mini S y recibir los datos de la pr\u00e1ctica."
+        "NSMicrophoneUsageDescription": "RutasElorrieta usa el micrófono si eliges grabar una explicación.",
+        "NSBluetoothAlwaysUsageDescription": "RutasElorrieta Premium usa Bluetooth para conectar con RaceBox Mini o Mini S y recibir los datos de la práctica."
       }
     },
     "dmg": {
@@ -91,7 +91,7 @@
         }
       ]
     },
-    "copyright": "Copyright \u00a9 2026 Aitor Delgado Mart\u00ednez \u00b7 AD Mobility",
+    "copyright": "Copyright © 2026 Aitor Delgado Martínez · AD Mobility",
     "win": {
       "target": [
         {
@@ -116,6 +116,6 @@
     "afterPack": "scripts/after-pack.cjs"
   },
   "license": "SEE LICENSE IN LICENSE",
-  "author": "Aitor Delgado Mart\u00ednez (AD Mobility)",
-  "description": "RutasElorrieta: trayectorias y pizarra did\u00e1ctica para formaci\u00f3n vial"
+  "author": "Aitor Delgado Martínez (AD Mobility)",
+  "description": "RutasElorrieta: trayectorias y pizarra didáctica para formación vial"
 }

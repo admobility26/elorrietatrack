@@ -7,9 +7,12 @@ const { pathToFileURL } = require('node:url');
 const organized=require('./organized-storage.cjs');
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'elorrietatrack', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } }]);
-app.setName('RutasElorrieta');
+// Keep the original internal name: macOS safeStorage uses its Keychain identity.
+// The window, bundle and installer retain the visible RutasElorrieta name.
+app.setName('ElorrietaTrack');
 
-const dataDirectory = require('./data-directory.cjs')(app.getPath('documents'));
+let dataDirectory;
+try{dataDirectory=require('./data-directory.cjs')(app.getPath('documents'),{beforeMove:()=>{if(require('./data-processes.cjs')())throw Error('Cierra RutasElorrieta y ElorrietaTrack Estable antes de trasladar sus datos. Después vuelve a abrir la nueva versión.');}});}catch(error){dialog.showErrorBox('RutasElorrieta · Carpeta de datos',error.message);app.exit(1);throw error;}
 const libraryPath = path.join(dataDirectory, 'Biblioteca de recorridos.json');
 const gpxDirectory=path.join(dataDirectory,'Archivos GPX');
 const videoDirectory = path.join(dataDirectory, 'Vídeos MP4');

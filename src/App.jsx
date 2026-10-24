@@ -1407,7 +1407,7 @@ export default function App() {
         desktop: true
       };
       setFolderName('Vídeos MP4 de Traza');
-      setExportMessage('Los vídeos se guardarán en Documentos/elorrietatrac/Vídeos MP4.');
+      setExportMessage('Los vídeos se guardarán en Documentos/RutasElorrieta/Vídeos MP4.');
       return;
     }
     if (!window.showDirectoryPicker) {
@@ -1561,7 +1561,7 @@ export default function App() {
         try {
           if (folderRef.current?.desktop && window.elorrietaDesktop) {
             await window.elorrietaDesktop.saveVideo(fileName, await blob.arrayBuffer());
-            setExportMessage(`Vídeo guardado en Documentos/elorrietatrac/Vídeos MP4: ${fileName}`);
+            setExportMessage(`Vídeo guardado en Documentos/RutasElorrieta/Vídeos MP4: ${fileName}`);
           } else if (folderRef.current) {
             const file = await folderRef.current.getFileHandle(fileName, {
               create: true
