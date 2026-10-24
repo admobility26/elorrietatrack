@@ -305,5 +305,24 @@
       "Administrazioan, web-erabiltzaile bat sortzean, adierazi sarbidearen azken eguna DD-MM-AAAA formatuan. 00-00-0000 balioak iraungitze-datarik ez dagoela esan nahi du. Erabiltzaile bakoitzaren data berritu dezakezu; ondoren saioa berriz hasi behar da. Lehendik zeuden erabiltzaileek mugarik gabeko sarbidea mantentzen dute administratzaileak data ezarri arte.",
       "Sarbidea iraungitzean zerbitzariak saioa hastea eta baliabide babestuak eskuratzea eragozten du. Tokiko liburutegiak ez dira ezabatzen. Administratzaileak iraungitze-datarik gabeko sarbidea mantentzen du. Web-sarbidearen datak eta mahaigaineko lizentziak independenteak dira."
     ]
+  },
+  {
+    "id": "datos-cifrados",
+    "es": [
+      "Datos privados y clave de datos en la web",
+      "Después de acceder a tu cuenta, crea una clave de datos de al menos 12 caracteres. Es independiente de la contraseña web y no se envía al servidor. El administrador puede restablecer el acceso, pero no recuperar esa clave ni abrir con ello la biblioteca cifrada. Consérvala en un lugar seguro.",
+      "La primera apertura migra y verifica la biblioteca de esa cuenta en este navegador antes de eliminar sus representaciones antiguas sin cifrar. Cada usuario debe abrir su propia cuenta para proteger sus datos anteriores; las copias exportadas previamente permanecen como estaban.",
+      "Los proyectos, alumnos y registros del navegador se cifran localmente. Los GPX originales, vídeos de las carpetas y MP4 exportados siguen siendo archivos normales. Para evitar guardar permisos de lectura sin cifrar, selecciona de nuevo las carpetas cuando abras una sesión nueva.",
+      "Descargar copia genera una copia cifrada con tu clave de datos. Compartir con otra clave crea una copia independiente: entrega al destinatario esa copia y su clave específica, sin revelar tu clave principal. La versión de escritorio también puede importar esas copias introduciendo su clave.",
+      "Puedes cambiar la clave de datos desde Mi cuenta o Administración. Cambiar la contraseña web no cambia la clave de datos. Si olvidas la clave de datos y no dispones de otra copia recuperable, no hay un acceso maestro que recupere su contenido. La administración de usuarios y licencias está disponible antes de desbloquear los datos privados."
+    ],
+    "eu": [
+      "Webeko datu pribatuak eta datuen gakoa",
+      "Zure kontuan sartu ondoren, sortu gutxienez 12 karaktereko datuen gakoa. Webeko pasahitzetik independentea da eta ez da zerbitzarira bidaltzen. Administratzaileak sarbidea berrezar dezake, baina horrek ez dio liburutegi zifratua irekitzeko aukerarik ematen. Gorde gakoa leku seguruan.",
+      "Lehen irekieran, nabigatzaile honetako kontuaren liburutegia migratu eta egiaztatzen da, zifratu gabeko aurreko datuak ezabatu aurretik. Erabiltzaile bakoitzak bere kontua ireki behar du lehengo datuak babesteko. Aurrez esportatutako kopiak ez dira aldatzen.",
+      "Nabigatzaileko proiektuak, ikasleak eta erregistroak tokian zifratzen dira. Karpetetako jatorrizko GPX eta bideoak, eta esportatutako MP4ak, fitxategi arruntak dira. Irakurtzeko baimenak zifratu gabe ez gordetzeko, aukeratu berriro karpetak saio berri bakoitzean.",
+      "Kopia deskargatzeak zure datuen gakoarekin zifratutako kopia sortzen du. Beste gako batekin partekatzeak kopia independentea sortzen du: eman hartzaileari kopia hori eta kopia horren gakoa, zure gako nagusia eman gabe. Mahaigaineko bertsioak ere kopia horiek inporta ditzake.",
+      "Nire kontua edo Administrazioa atalean alda dezakezu datuen gakoa. Webeko pasahitza aldatzeak ez du datuen gakoa aldatzen. Gakoa ahazten baduzu eta berreskuratzeko beste kopiarik ez baduzu, ez dago edukia berreskuratzeko gako nagusirik. Erabiltzaileak eta lizentziak datu pribatuak desblokeatu aurretik kudea daitezke."
+    ]
   }
 ]

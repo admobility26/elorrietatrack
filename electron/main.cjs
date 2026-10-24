@@ -21,12 +21,14 @@ const appDataDirectory = path.join(dataDirectory, '.datos-de-la-aplicacion');
 
 app.setPath('userData', appDataDirectory);
 const licensing=require('./licensing.cjs')({app,safeStorage});
+const security=require('./ipc-security.cjs')({app,check:()=>licensing.check()});
+const registerHandle=ipcMain.handle.bind(ipcMain),registerOn=ipcMain.on.bind(ipcMain);
+ipcMain.handle=(channel,handler)=>registerHandle(channel,(event,...args)=>{security.authorize(channel,event);return handler(event,...args);});
+ipcMain.on=(channel,handler)=>registerOn(channel,(event,...args)=>{try{security.authorize(channel,event);handler(event,...args);}catch(error){if(channel==='library:save-sync'||channel==='files:get-data-directory')event.returnValue=false;console.warn('Operación nativa rechazada:',channel);}});
 ipcMain.handle('license:status',()=>licensing.status());
 ipcMain.handle('license:paste',async()=>{const text=(await clipboard.readText()).trim();const compact=text.toUpperCase().replace(/[\s\u200B-\u200D\uFEFF\-\u2010-\u2015\u2212]/g,'');if(text.length>100||! /^(?:(?:ADMIN|EEM|PRE))?[A-F0-9]{32}$/.test(compact))throw Error('Copia una clave de licencia válida antes de pulsar Pegar.');return text;});
 ipcMain.handle('license:activate',(_event,key)=>licensing.activate(String(key||'').slice(0,100)));
-// Enforce activation in the main process before opening protected data or starting recordings.
-const registerHandle=ipcMain.handle.bind(ipcMain);
-ipcMain.handle=(channel,handler)=>registerHandle(channel,(event,...args)=>{if((channel.startsWith('workspace:')||channel.startsWith('bluetooth:')||channel==='files:save-gpx')&&licensing.check().plan!=='premium')throw Error('Función Premium. Actualiza tu suscripción.');if(['library:load','movie:begin','files:save-video'].includes(channel)&&!licensing.check().valid)throw Error('Licencia no activa.');return handler(event,...args);});
+
 
 
 function ensureDataDirectories() {
@@ -43,6 +45,7 @@ ipcMain.handle('workspace:read-text',async(_event,name)=>{if(!/\.(gpx|json)$/i.t
 ipcMain.handle('workspace:write-project',async(_event,text)=>{const target=workspaceFile('ElorrietaTrack Premium-proyecto.json');const parsed=JSON.parse(text);if(parsed.format!=='elorrietatrack-premium-project')throw Error('Proyecto inválido.');const temporary=target+'.tmp';await fs.promises.writeFile(temporary,text,'utf8');await fs.promises.rename(temporary,target);});
 
 function writeLibrary(storage) {
+  if(!storage||typeof storage!=='object'||Array.isArray(storage)||Object.entries(storage).some(([k,v])=>!k.startsWith('elorrietatrack-')||typeof v!=='string')||Buffer.byteLength(JSON.stringify(storage),'utf8')>256*1024*1024)throw Error('La biblioteca local no tiene un formato válido.');
   ensureDataDirectories();organized.writeLibrary(dataDirectory,storage);
 }
 
@@ -106,10 +109,10 @@ ipcMain.handle('files:open-data-folder', async () => {
 ipcMain.on('files:get-data-directory', event => { event.returnValue = dataDirectory; });
 
 
-ipcMain.handle('movie:begin',async(_event,suggestedName)=>{const result=await dialog.showSaveDialog({title:'Guardar montaje MP4',defaultPath:path.join(videoDirectory,cleanFileName(suggestedName||'ElorrietaTrack-mapa-pip.mp4','.mp4')),filters:[{name:'MP4',extensions:['mp4']}]});if(result.canceled)return null;const id=require('node:crypto').randomUUID(),temporary=result.filePath+'.'+id+'.partial';const handle=await fs.promises.open(temporary,'wx');movieWrites.set(id,{handle,temporary,target:result.filePath});return {id,name:path.basename(result.filePath)};});
-ipcMain.handle('movie:write',async(_event,id,bytes)=>{const entry=movieWrites.get(id);if(!entry)throw Error('La exportación no está abierta.');if(!(bytes instanceof ArrayBuffer)||bytes.byteLength>32*1024*1024)throw Error('Bloque de vídeo inválido.');await entry.handle.writeFile(Buffer.from(bytes));});
-ipcMain.handle('movie:finish',async(_event,id)=>{const entry=movieWrites.get(id);if(!entry)throw Error('La exportación no está abierta.');await entry.handle.sync();await entry.handle.close();entry.closed=true;await fs.promises.rename(entry.temporary,entry.target);movieWrites.delete(id);return path.dirname(entry.target)===path.resolve(videoDirectory)?{url:`elorrietatrack://app/__recordings/${encodeURIComponent(path.basename(entry.target))}`} : {};});
-ipcMain.handle('movie:abort',async(_event,id)=>{const entry=movieWrites.get(id);if(!entry)return;if(!entry.closed)await entry.handle.close().catch(()=>{});await fs.promises.unlink(entry.temporary).catch(()=>{});movieWrites.delete(id);});
+ipcMain.handle('movie:begin',async(event,suggestedName)=>{const result=await dialog.showSaveDialog({title:'Guardar montaje MP4',defaultPath:path.join(videoDirectory,cleanFileName(suggestedName||'ElorrietaTrack-mapa-pip.mp4','.mp4')),filters:[{name:'MP4',extensions:['mp4']}]});if(result.canceled)return null;const id=require('node:crypto').randomUUID(),temporary=result.filePath+'.'+id+'.partial';const handle=await fs.promises.open(temporary,'wx');movieWrites.set(id,{handle,temporary,target:result.filePath,owner:event.sender.id});return {id,name:path.basename(result.filePath)};});
+ipcMain.handle('movie:write',async(event,id,bytes)=>{const entry=movieWrites.get(id);if(entry&&entry.owner!==event.sender.id)throw Error('Exportación de otra ventana.');if(!entry)throw Error('La exportación no está abierta.');if(!(bytes instanceof ArrayBuffer)||bytes.byteLength>32*1024*1024)throw Error('Bloque de vídeo inválido.');await entry.handle.writeFile(Buffer.from(bytes));});
+ipcMain.handle('movie:finish',async(event,id)=>{const entry=movieWrites.get(id);if(entry&&entry.owner!==event.sender.id)throw Error('Exportación de otra ventana.');if(!entry)throw Error('La exportación no está abierta.');await entry.handle.sync();await entry.handle.close();entry.closed=true;await fs.promises.rename(entry.temporary,entry.target);movieWrites.delete(id);return path.dirname(entry.target)===path.resolve(videoDirectory)?{url:`elorrietatrack://app/__recordings/${encodeURIComponent(path.basename(entry.target))}`} : {};});
+ipcMain.handle('movie:abort',async(event,id)=>{const entry=movieWrites.get(id);if(entry&&entry.owner!==event.sender.id)throw Error('Exportación de otra ventana.');if(!entry)return;if(!entry.closed)await entry.handle.close().catch(()=>{});await fs.promises.unlink(entry.temporary).catch(()=>{});movieWrites.delete(id);});
 app.on('will-quit',()=>{for(const entry of movieWrites.values()){void entry.handle.close().catch(()=>{});try{fs.unlinkSync(entry.temporary);}catch{}}movieWrites.clear();});
 
 const distDirectory = path.join(app.getAppPath(), 'dist');
@@ -140,6 +143,7 @@ async function createWindow() {
     },
   });
 
+  security.register(window.webContents);
   window.webContents.on('context-menu',(_event,params)=>{if(params.isEditable)Menu.buildFromTemplate([{role:'cut'},{role:'copy'},{role:'paste'},{type:'separator'},{role:'selectAll'}]).popup({window});});
   window.on('close',event=>{if(!autosaveClients.has(window.webContents.id))return;const pending=closingWindows.get(window.webContents.id);if(pending?.ready)return;event.preventDefault();if(pending)return;const id=require('node:crypto').randomUUID();closingWindows.set(window.webContents.id,{window,id,ready:false});window.webContents.send('autosave:prepare-close',id);});
   require('./bluetooth.cjs')(window,()=>licensing.check().valid&&licensing.check().plan==='premium');
@@ -155,9 +159,9 @@ async function createWindow() {
     return { action: 'deny' };
   });
   window.webContents.on('will-navigate', (event, url) => {
-    if (!url.startsWith('elorrietatrack://')){event.preventDefault();if(url.startsWith('mailto:admobility26@gmail.com'))void shell.openExternal(url);}
+    if (!security.trustedURL(url)){event.preventDefault();if(url.startsWith('mailto:admobility26@gmail.com'))void shell.openExternal(url);}
   });
-  if (process.env.ELECTRON_START_URL) await window.loadURL(process.env.ELECTRON_START_URL);
+  if (!app.isPackaged&&process.env.ELECTRON_START_URL&&security.trustedURL(process.env.ELECTRON_START_URL)) await window.loadURL(process.env.ELECTRON_START_URL);
   else await window.loadURL('elorrietatrack://app/index.html');
 }
 
@@ -168,7 +172,7 @@ app.whenReady().then(async () => {
   session.defaultSession.on('will-download',(_event,item)=>{const raw=item.getFilename(),directory=organized.downloadFolder(dataDirectory,raw);if(!directory)return;organized.ensure(dataDirectory);const extension=path.extname(raw).toLowerCase(),name=cleanFileName(raw,extension);item.setSavePath(organized.uniqueFile(directory,name));});
   const serveMapTile=require('./map-tiles.cjs')({directory:path.join(appDataDirectory,'cache-ortofoto'),fetchTile:(url,options)=>net.fetch(url,options)});
   const servePnoaTile=require('./map-tiles.cjs')({directory:path.join(appDataDirectory,'cache-ortofoto-pnoa'),fetchTile:(url,options)=>net.fetch(url,options),provider:'pnoa'});
-  protocol.handle('elorrietatrack', async request => {
+  async function serveLocal(request) {
     if(new URL(request.url).hostname==='app'&&new URL(request.url).pathname==='/runtime-licenses.html'){const target=app.isPackaged?path.join(process.resourcesPath,'legal','Chromium-notices.html'):path.join(__dirname,'..','node_modules','electron','dist','LICENSES.chromium.html');return net.fetch(pathToFileURL(target).toString());}
     if((new URL(request.url).pathname.startsWith('/premium-ficha/')||new URL(request.url).pathname.includes('/premium-'))&&(!licensing.check().valid||licensing.check().plan!=='premium'))return new Response('Función Premium. Actualiza tu suscripción.',{status:403});
     if(new URL(request.url).pathname.startsWith('/__pnoa/'))return servePnoaTile(request);
@@ -187,10 +191,12 @@ app.whenReady().then(async () => {
     const filePath = path.resolve(distDirectory, `.${requestedPath === '/' ? '/index.html' : requestedPath}`);
     if (!filePath.startsWith(`${path.resolve(distDirectory)}${path.sep}`)) return new Response('No encontrado', { status: 404 });
     return net.fetch(pathToFileURL(filePath).toString());
-  });
+  }
+  protocol.handle('elorrietatrack',async request=>{const response=await serveLocal(request),headers=new Headers(response.headers);headers.set('Content-Security-Policy',require('./content-security.cjs'));headers.set('X-Content-Type-Options','nosniff');return new Response(response.body,{status:response.status,headers});});
   session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback, details) => {
-    callback((permission === 'media' && details.mediaTypes?.includes('audio'))||(permission==='bluetooth'&&licensing.check().valid&&licensing.check().plan==='premium'&&_webContents.getURL().startsWith('elorrietatrack://app/')));
+    callback(security.allowPermission(_webContents,permission,details));
   });
+  session.defaultSession.setPermissionCheckHandler((contents,permission,_origin,details)=>security.allowPermission(contents,permission,details));
   await createWindow();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });

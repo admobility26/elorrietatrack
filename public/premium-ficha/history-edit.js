@@ -73,7 +73,7 @@
       if(!date)return alert('Indica la fecha de la clase.');
       if(!vehicleType)return alert('Selecciona el tipo de vehículo.');
       entry.date=date;entry.minutes=Number(overlay.querySelector('#ecMinutes').value)||0;entry.route=overlay.querySelector('#ecRoute').value.trim();entry.notes=overlay.querySelector('#ecNotes').value.trim();entry.vehicleType=vehicleType;entry.editedAt=new Date().toISOString();
-      student.updatedAt=new Date().toISOString();localStorage.setItem(DBKEY,JSON.stringify(db));sessionStorage.setItem(RETURN_KEY,student.id);localStorage.setItem(ACTIVE_KEY,student.id);location.reload();
+      student.updatedAt=new Date().toISOString();localStorage.setItem(DBKEY,JSON.stringify(db));sessionStorage.setItem(RETURN_KEY,student.id);localStorage.setItem(ACTIVE_KEY,student.id);(window.rutasReload?window.rutasReload():location.reload());
     });
   }
 

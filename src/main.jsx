@@ -58,7 +58,12 @@ async function start() {
       user=await new Promise(resolve=>root.render(<Login onLogin={(user,language)=>resolve({...user,loginLanguage:language})}/>));
     }
     await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='/account-storage.js';script.onload=resolve;script.onerror=reject;document.head.append(script);});
-    window.installRutasAccount(user);
+    await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='/account-vault.js';script.onload=resolve;script.onerror=reject;document.head.append(script);});
+    const {default:LocalVault}=await import('./LocalVault.jsx');
+    const vault=await new Promise(resolve=>root.render(<LocalVault user={user} onReady={resolve}/>));
+    window.installRutasAccount(user,vault);
+    const {registerAutosave}=await import('./autosave.js');registerAutosave('encrypted-vault',{checkpoint:()=>vault.flush(),finish:()=>vault.flush(),busy:()=>vault.pending});
+    window.addEventListener('elorrietatrack:vault-error',event=>reportAutosave('error',event.detail));
     window.elorrietaEntitlement=user.plan||'basic';
     if(user.loginLanguage)localStorage.setItem('elorrietatrack-language',user.loginLanguage);
     monitorAccount(user);

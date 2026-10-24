@@ -1,3 +1,5 @@
+import {readJSON} from './request.js';
+import contentSecurity from './security-policy.js';
 import {accessExpired,accessExpiry,NO_EXPIRY} from './accessPolicy.js';
 // SPDX-FileCopyrightText: 2026 Aitor Delgado Martínez · AD Mobility
 // SPDX-License-Identifier: LicenseRef-RutasAD-Educational-NonCommercial-1.0
@@ -22,7 +24,7 @@ async function identity(request,env){
  if(!token)return null;
  return env.AUTH.prepare("SELECT u.*, s.token_hash FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>? AND u.active=1 AND (u.role='admin' OR u.expires_at>?)").bind(await digest(token),Date.now(),Date.now()).first();
 }
-async function body(request){if(Number(request.headers.get('content-length'))>4096)throw Error('Solicitud demasiado grande.');const raw=await request.text();if(raw.length>4096)throw Error('Solicitud demasiado grande.');return JSON.parse(raw);}
+const body=readJSON;
 const validEmail=e=>typeof e==='string'&&e.length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 const validPassword=p=>typeof p==='string'&&p.length>=8&&p.length<=128;
 async function api(request,env,path){
@@ -34,7 +36,7 @@ async function api(request,env,path){
   for(const key of [`ip:${ip}`,`email:${email}`]){
    const bucket=await digest(key),now=Date.now();
    const limit=await env.AUTH.prepare('INSERT INTO login_limits(bucket,attempts,until_at) VALUES(?,1,?) ON CONFLICT(bucket) DO UPDATE SET attempts=CASE WHEN until_at<? THEN 1 ELSE attempts+1 END, until_at=CASE WHEN until_at<? THEN excluded.until_at ELSE until_at END RETURNING attempts').bind(bucket,now+900000,now,now).first();
-   if(limit.attempts>15)return json({error:'Demasiados intentos. Espera 15 minutos.'},429);
+   if(limit.attempts>(key.startsWith('ip:')?120:15))return json({error:'Demasiados intentos. Espera 15 minutos.'},429);
   }
   const u=await env.AUTH.prepare('SELECT * FROM users WHERE email=?').bind(email).first();
   const ok=await verifyPassword(typeof b.password==='string'?b.password.slice(0,129):'',u?.password_hash||'pbkdf2:100000:dummy:0000000000000000000000000000000000000000000000000000000000000000');
@@ -93,18 +95,20 @@ async function api(request,env,path){
  }
  return json({error:'No encontrado.'},404);
 }
-export default {async fetch(request,env){
+export default {
+ async scheduled(_event,env,context){const now=Date.now();context.waitUntil(env.AUTH.batch([env.AUTH.prepare('DELETE FROM sessions WHERE expires_at<?').bind(now),env.AUTH.prepare('DELETE FROM login_limits WHERE until_at<?').bind(now),env.AUTH.prepare('DELETE FROM license_nonces WHERE created_at<?').bind(now-600000)]));},
+ async fetch(request,env){
  try{
   const url=new URL(request.url),path=url.pathname;
   if(path.startsWith('/api/'))return await api(request,env,path);
   // The entry and login assets are public; application code require a session.
-  const publicPath=path.startsWith('/fonts/')||['/','/index.html','/sw.js','/account-storage.js','/manual.html','/manual','/licencia.html','/licencia','/LICENSE.txt','/THIRD-PARTY-NOTICES.txt'].includes(path)||loginAssets.has(path)||['/ad-mobility-logo.png','/elorrieta-logo.svg','/favicon.png'].includes(path);
+  const publicPath=path.startsWith('/fonts/')||['/','/index.html','/sw.js','/account-storage.js','/account-vault.js','/manual.html','/manual','/licencia.html','/licencia','/LICENSE.txt','/THIRD-PARTY-NOTICES.txt'].includes(path)||loginAssets.has(path)||['/ad-mobility-logo.png','/elorrieta-logo.svg','/favicon.png'].includes(path);
   const u=publicPath?null:await identity(request,env);
   if((path==='/premium-ficha'||path.startsWith('/premium-ficha/'))&&request.headers.get('Sec-Fetch-Dest')==='document')return new Response('Abre Alumnos desde la aplicación.',{status:403});
   if(path.includes('/premium-')&&(!u||(u.role!=='admin'&&u.plan!=='premium')))return new Response('Función Premium. Actualiza tu suscripción.',{status:403,headers:{'Cache-Control':'no-store'}});
   if(!publicPath&&!u)return new Response('Inicia sesión en ElorrietaTrack.',{status:401,headers:{'Cache-Control':'no-store'}});
   let response=await env.ASSETS.fetch(request);
-  const headers=new Headers(response.headers);headers.set('Cache-Control','no-store');headers.set('X-Content-Type-Options','nosniff');headers.set('Referrer-Policy','strict-origin-when-cross-origin');headers.set('X-Frame-Options','SAMEORIGIN');
+  const headers=new Headers(response.headers);headers.set('Cache-Control','no-store');headers.set('X-Content-Type-Options','nosniff');headers.set('Referrer-Policy','strict-origin-when-cross-origin');headers.set('X-Frame-Options','SAMEORIGIN');headers.set('Content-Security-Policy',contentSecurity);headers.set('Permissions-Policy','camera=(), microphone=(self), geolocation=(self)');
   return new Response(response.body,{status:response.status,headers});
- }catch(error){console.error('Auth request failed',error.name);return json({error:'No se pudo completar la operación. Inténtalo de nuevo.'},500);}
+ }catch(error){console.error('Auth request failed',error.name);return json({error:error.status?error.message:'No se pudo completar la operación. Inténtalo de nuevo.'},error.status||500);}
 }};

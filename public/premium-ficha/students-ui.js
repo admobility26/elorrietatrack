@@ -135,7 +135,7 @@
   function openStudent(id){
     localStorage.setItem(ACTIVE_KEY,id);
     sessionStorage.setItem(RETURN_KEY,id);
-    location.reload();
+    (window.rutasReload?window.rutasReload():location.reload());
   }
 
   window.RutasFicha.create=()=>{showStudents();renderForm();};window.RutasFicha.edit=id=>{showStudents();renderForm(id);};

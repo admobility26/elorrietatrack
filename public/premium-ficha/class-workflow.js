@@ -60,7 +60,11 @@
     const d=draft();if(!d)return;
     const content=document.querySelector('#tabContent');if(!content||content.querySelector('.activeClassBanner'))return;
     const banner=document.createElement('div');banner.className='activeClassBanner';
-    banner.innerHTML=`<div><strong>Clase en curso · ${d.date}</strong><span>${d.minutes?`${d.minutes} min · `:''}${d.route||'sin itinerario indicado'} · ${vehicleLabel(d.vehicleType)}</span></div><button id="finishClassBtn" type="button">Guardar y finalizar clase</button>`;
+    const info=document.createElement('div'),title=document.createElement('strong'),detail=document.createElement('span'),finish=document.createElement('button');
+    title.textContent='Clase en curso · '+String(d.date||'');
+    detail.textContent=`${d.minutes?`${d.minutes} min · `:''}${d.route||'sin itinerario indicado'} · ${vehicleLabel(d.vehicleType)}`;
+    finish.id='finishClassBtn';finish.type='button';finish.textContent='Guardar y finalizar clase';
+    info.append(title,detail);banner.append(info,finish);
     content.prepend(banner);
   }
 

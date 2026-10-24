@@ -110,10 +110,10 @@ async function generateOfficialPdf(){
  }catch(e){console.error(e);alert("El navegador ha bloqueado la descarga directa del PDF oficial. Al desplegar en Cloudflare añadiremos un proxy local para que la generación sea fiable en iPad y Mac.");}
 }
 function mergeImported(obj){
- const incoming=obj.students||{};Object.values(incoming).forEach(s=>{const old=db.students[s.id];if(!old||new Date(s.updatedAt||0)>=new Date(old.updatedAt||0))db.students[s.id]=s});saveDb();renderAll();
+ const incoming=globalThis.RutasValidateStudents({students:obj.students}).students;Object.values(incoming).forEach(s=>{const old=db.students[s.id];if(!old||new Date(s.updatedAt||0)>=new Date(old.updatedAt||0))db.students[s.id]=s});saveDb();renderAll();
 }
-function exportAll(){
- const payload={format:"FichaAutoescuela",version:2,exportedAt:new Date().toISOString(),students:db.students};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);downloadUrl(url,`FichaAutoescuela-${new Date().toISOString().slice(0,10)}.json`);setTimeout(()=>URL.revokeObjectURL(url),2000)
+async function exportAll(){
+ const payload={format:"FichaAutoescuela",version:2,exportedAt:new Date().toISOString(),students:db.students};const blob=new Blob([JSON.stringify(window.rutasVault?await window.rutasVault.encodeBackup(payload):payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);downloadUrl(url,`FichaAutoescuela-${new Date().toISOString().slice(0,10)}.json`);setTimeout(()=>URL.revokeObjectURL(url),2000)
 }
 
 $("#newStudent").addEventListener("click",()=>{const s=newStudent();db.students[s.id]=s;currentStudentId=s.id;currentPermit=null;saveDb();selectStudent(s.id);els.name.focus()});
@@ -124,7 +124,7 @@ $("#addPermitBtn").addEventListener("click",()=>$("#addPermitBox").classList.tog
 $("#confirmAddPermit").addEventListener("click",()=>{const s=currentStudent(),k=$("#newPermitSelect").value;if(!s)return;if(!s.permits[k])s.permits[k]=newPermitData(k);currentPermit=k;markDirty();saveDb();$("#addPermitBox").classList.add("hidden");renderAll()});
 $$(".tab").forEach(b=>b.addEventListener("click",()=>{currentTab=b.dataset.tab;renderTab()}));
 $("#exportAllBtn").addEventListener("click",exportAll);
-$("#importAllInput").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(o.format!=="FichaAutoescuela"&&!o.students)throw 0;mergeImported(o);alert("Datos fusionados correctamente.");}catch{alert("Archivo no válido.");}};r.readAsText(f)});
+$("#importAllInput").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const raw=JSON.parse(r.result),o=window.rutasVault?await window.rutasVault.decodeBackup(raw):raw;if(o.format!=="FichaAutoescuela"&&!o.students)throw 0;mergeImported(o);alert("Datos fusionados correctamente.");}catch{alert("Archivo no válido.");}};r.readAsText(f)});
 let promptEvt=null;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();promptEvt=e;$("#installBtn").classList.remove("hidden")});$("#installBtn").addEventListener("click",async()=>{if(promptEvt){await promptEvt.prompt();promptEvt=null;$("#installBtn").classList.add("hidden")}});
 
 renderStudentList();renderAll();

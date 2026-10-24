@@ -1,3 +1,4 @@
+import {readJSON} from './request.js';
 import {digest} from './password.js';
 const DAY=86400000;
 const FOREVER=8640000000000000;
@@ -15,9 +16,15 @@ export function normalizeLicenseKey(value){
  return /^[A-F0-9]{32}$/.test(token)?tier+'-'+token:null;
 }
 export async function licenseAPI(request,env,path,json){
- const raw=await request.text();if(raw.length>4096)return json({error:'Solicitud demasiado grande.'},413);const b=JSON.parse(raw);
+ const b=await readJSON(request);
+ const bucket=await digest('license-ip:'+(request.headers.get('CF-Connecting-IP')||'local')),now=Date.now();
+ const limit=await env.AUTH.prepare('INSERT INTO login_limits(bucket,attempts,until_at) VALUES(?,1,?) ON CONFLICT(bucket) DO UPDATE SET attempts=CASE WHEN until_at<? THEN 1 ELSE attempts+1 END, until_at=CASE WHEN until_at<? THEN excluded.until_at ELSE until_at END RETURNING attempts').bind(bucket,now+60000,now,now).first();
+ if(limit.attempts>120)return json({error:'Demasiadas comprobaciones de licencia. Espera un minuto.'},429);
  if(path==='/api/license/activate'){
   if(typeof b.key!=='string'||b.key.length>100||!b.device||b.device.length!==64||typeof b.publicKey!=='string'||b.publicKey.length>1000)return json({error:'Datos de activación incorrectos.'},400);
+  if(typeof b.device!=='string'||!/^[a-f0-9]{64}$/i.test(b.device))return json({error:'Identificador de equipo incorrecto.'},400);
+  // Validate before the atomic UPDATE: malformed clients must not consume a key.
+  try{const jwk=JSON.parse(b.publicKey);if(jwk.kty!=='OKP'||jwk.crv!=='Ed25519'||typeof jwk.x!=='string'||jwk.d!==undefined)throw Error();await crypto.subtle.importKey('jwk',jwk,{name:'Ed25519'},false,['verify']);}catch{return json({error:'Clave pública del equipo incorrecta. Actualiza la aplicación e inténtalo de nuevo.'},400);}
   const normalized=normalizeLicenseKey(b.key);
   if(!normalized)return json({error:'La clave debe contener 32 letras y números. Copia la clave completa; los prefijos EEM- y PRE- son opcionales. ADMIN- debe conservarse.'},400);
   let keyHash=await digest(normalized);
@@ -68,7 +75,7 @@ export async function adminLicenses(request,env,path,json){
  if(path==='/api/admin/licenses'&&request.method==='GET'){
   const {results}=await env.AUTH.prepare('SELECT id,label,owner_email,key_ciphertext,plan,license_kind,pc_identifier,expires_at,active,activated_at,created_at,(SELECT COUNT(DISTINCT device) FROM license_activations WHERE license_id=licenses.id) AS activation_count FROM licenses ORDER BY created_at DESC').all();return json({licenses:await Promise.all(results.map(async({key_ciphertext,...row})=>({...row,key:await unseal(key_ciphertext,env,row.id)})))});
  }
- const b=await request.json();
+ const b=await readJSON(request);
  if(b.expiresAt==='00-00-0000')b.expiresAt=FOREVER;
  if(b.pcIdentifier!==undefined&&(typeof b.pcIdentifier!=='string'||b.pcIdentifier.length>120))return json({error:'Identificador PC: máximo 120 caracteres.'},400);
  if(path==='/api/admin/licenses'&&request.method==='POST'){

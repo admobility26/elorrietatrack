@@ -1,9 +1,10 @@
+import {readEncryptedBackup} from '../encryptedBackup.js';
 import {assembleReview,capturedParts,validateAssembly} from './reviewAssembly.js';
 let active;
 const native=()=>window.elorrietaDesktop?.chooseWorkspace;
 const db=()=>new Promise((ok,no)=>{const r=indexedDB.open('elorrietatrack-premium-workspace',1);r.onupgradeneeded=()=>r.result.createObjectStore('handles');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);});
-async function remember(handle){const d=await db();return new Promise((ok,no)=>{const t=d.transaction('handles','readwrite');t.objectStore('handles').put(handle,'folder');t.oncomplete=()=>{d.close();ok();};t.onerror=()=>no(t.error);});}
-async function previous(){const d=await db();return new Promise((ok,no)=>{const r=d.transaction('handles').objectStore('handles').get('folder');r.onsuccess=()=>{d.close();ok(r.result);};r.onerror=()=>no(r.error);});}
+async function remember(handle){if(window.rutasVault)return window.rutasVault.handlePut('workspace',handle);const d=await db();return new Promise((ok,no)=>{const t=d.transaction('handles','readwrite');t.objectStore('handles').put(handle,'folder');t.oncomplete=()=>{d.close();ok();};t.onerror=()=>no(t.error);});}
+async function previous(){if(window.rutasVault)return window.rutasVault.handleGet('workspace');const d=await db();return new Promise((ok,no)=>{const r=d.transaction('handles').objectStore('handles').get('folder');r.onsuccess=()=>{d.close();ok(r.result);};r.onerror=()=>no(r.error);});}
 export async function openWorkspace(reopen=false){
  if(native()){const folder=await window.elorrietaDesktop.chooseWorkspace();if(!folder)return null;active={...folder,native:true};return active;}
  if(!window.showDirectoryPicker)throw Error('Para trabajar con carpetas usa Chrome en Mac o ElorrietaTrack Premium.');
@@ -21,14 +22,14 @@ export async function workspaceMedia(media){
  try{return {file:await(await active.handle.getFileHandle(media.name)).getFile()};}catch{throw Error('No se encuentra el vídeo original. Si has renombrado o movido la carpeta, pulsa Abrir carpeta y selecciona su ubicación actual.');}
 }
 export async function saveWorkspaceProject(review){
- if(!active)throw Error('Abre primero una carpeta.');const text=JSON.stringify({format:'elorrietatrack-premium-project',version:1,review},null,2);
+ if(!active)throw Error('Abre primero una carpeta.');const value={format:'elorrietatrack-premium-project',version:1,review},text=JSON.stringify(window.rutasVault?await window.rutasVault.encodeBackup(value):value,null,2);
  if(active.native)return window.elorrietaDesktop.writeWorkspaceProject(text);
  const f=await active.handle.getFileHandle('ElorrietaTrack Premium-proyecto.json',{create:true});const w=await f.createWritable();try{await w.write(text);await w.close();}catch(e){await w.abort().catch(()=>{});throw e;}
 }
 export function parseWorkspaceGpx(text,name){const xml=new DOMParser().parseFromString(text,'application/xml');if(xml.querySelector('parsererror'))throw Error('GPX inválido.');const segments=[...xml.querySelectorAll('trkseg,rte')];const points=[...xml.querySelectorAll('trkpt,rtept')].map(p=>{if(!p.hasAttribute('lon')||!p.hasAttribute('lat'))throw Error('GPX inválido.');const time=Date.parse(p.querySelector('time')?.textContent);return {coordinates:[Number(p.getAttribute('lon')),Number(p.getAttribute('lat'))],time:Number.isFinite(time)?time:null,segment:Math.max(0,segments.indexOf(p.closest('trkseg,rte')))};});if(points.length<2||points.some(p=>!p.coordinates.every(Number.isFinite)||Math.abs(p.coordinates[0])>180||Math.abs(p.coordinates[1])>90))throw Error('El GPX necesita al menos dos posiciones válidas.');return {name,points,incidents:[]};}
 export async function loadWorkspaceSelection(gpx,video){
  let review;
- if(gpx==='ElorrietaTrack Premium-proyecto.json'){const p=JSON.parse(await workspaceText(gpx));if(p.format!=='elorrietatrack-premium-project'||p.version!==1||!Array.isArray(p.review?.points)||!Array.isArray(p.review?.incidents))throw Error('Proyecto ElorrietaTrack Premium inválido.');review=p.review;if(review.points.length<2||review.points.some(p=>!Array.isArray(p.coordinates)||p.coordinates.length!==2||!p.coordinates.every(Number.isFinite)||Math.abs(p.coordinates[0])>180||Math.abs(p.coordinates[1])>90||(p.time!=null&&!Number.isFinite(p.time))))throw Error('Posiciones del proyecto inválidas.');if(review.incidents.some(i=>!Array.isArray(i.coordinates)||i.coordinates.length!==2||!i.coordinates.every(Number.isFinite)||typeof i.title!=='string'||typeof i.note!=='string'))throw Error('Incidencias del proyecto inválidas.');}
+ if(gpx==='ElorrietaTrack Premium-proyecto.json'){const raw=JSON.parse(await workspaceText(gpx)),p=await readEncryptedBackup(raw);if(p.format!=='elorrietatrack-premium-project'||p.version!==1||!Array.isArray(p.review?.points)||!Array.isArray(p.review?.incidents))throw Error('Proyecto ElorrietaTrack Premium inválido.');review=p.review;if(review.points.length<2||review.points.some(p=>!Array.isArray(p.coordinates)||p.coordinates.length!==2||!p.coordinates.every(Number.isFinite)||Math.abs(p.coordinates[0])>180||Math.abs(p.coordinates[1])>90||(p.time!=null&&!Number.isFinite(p.time))))throw Error('Posiciones del proyecto inválidas.');if(review.incidents.some(i=>!Array.isArray(i.coordinates)||i.coordinates.length!==2||!i.coordinates.every(Number.isFinite)||typeof i.title!=='string'||typeof i.note!=='string'))throw Error('Incidencias del proyecto inválidas.');}
  else review=parseWorkspaceGpx(await workspaceText(gpx),gpx.replace(/\.gpx$/i,''));
  validateAssembly(review);
  if(review.parts?.length){

@@ -50,7 +50,7 @@ export async function deleteStudent(studentId,{desktop=window.elorrietaDesktop}=
  // Native disk and localStorage failures happen before the atomic IndexedDB
  // deletion; failures roll the metadata back without loading video blobs.
  delete nextStorage[SESSION_KEY];const resumeAutosave=suspendAutosave();
- try{if(desktop)await desktop.saveLibrary(nextStorage);write(nextStorage);await commitStudentDeletion({sessionIds:owned.map(s=>s.id),libraryIds:removedLibrary,libraryItems:remainingLibrary,videoIds});}
+ try{if(desktop)await desktop.saveLibrary(nextStorage);write(nextStorage);await window.rutasVault?.flush();await commitStudentDeletion({sessionIds:owned.map(s=>s.id),libraryIds:removedLibrary,libraryItems:remainingLibrary,videoIds});}
  catch(error){resumeAutosave();let failed=false;try{write(storage);if(desktop)await desktop.saveLibrary(storage);}catch{failed=true;}throw Error(failed?'No se ha completado el borrado. Conserva la copia de seguridad y vuelve a abrir la app.':`No se ha eliminado el alumno. ${error.message||''}`);}
  if(ids.has(storage[`${prefix}ficha-active-student`]))sessionStorage.removeItem('ficha-autoescuela-active-class');
  if(ids.has(sessionStorage.getItem('ficha-autoescuela-open-student')))sessionStorage.removeItem('ficha-autoescuela-open-student');

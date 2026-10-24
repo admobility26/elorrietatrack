@@ -1,0 +1,17 @@
+import React,{useEffect,useState} from 'react';
+import {AccountControls} from './WebAccess.jsx';
+export default function LocalVault({user,onReady}){
+ const [exists,setExists]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ useEffect(()=>{window.RutasLocalVault.has(user.id).then(setExists).catch(e=>setError(e.message));},[user.id]);
+ const eu=user.loginLanguage!=='es',t=(a,b)=>eu?a:b;
+ return <main className="access-page"><div>{user.role==='admin'&&<AccountControls accountUser={user} language={eu?'eu':'es'}/>}<form className="access-card vault-card" onSubmit={async e=>{e.preventDefault();setBusy(true);setError('');const data=new FormData(e.currentTarget);try{if(!exists&&data.get('password')!==data.get('confirm'))throw Error(t('Bi gakoak berdinak izan behar dira.','Las dos claves deben coincidir.'));const vault=await window.RutasLocalVault.unlock(user,data.get('password'));e.currentTarget?.reset();onReady(vault);}catch(e){setError(e.message);setExists(await window.RutasLocalVault.has(user.id));setBusy(false);}}}>
+ <h1>{exists?t('Datu pribatuak desblokeatu','Desbloquear datos privados'):t('Zure datuak babestu','Proteger tus datos')}</h1><p>{user.email}</p>
+ <p>{t('Datuak ordenagailu honetan gordetzen dira, zifratuta. Datuen gakoa ez da zerbitzarira bidaltzen eta administratzaileak ezin du berreskuratu.','Los datos se guardan cifrados en este equipo. La clave de datos no se envía al servidor y el administrador no puede recuperarla.')}</p>
+ <label>{t('Datuen gakoa (gutxienez 12 karaktere)','Clave de datos (mínimo 12 caracteres)')}<input name="password" type="password" minLength={12} maxLength={256} autoComplete={exists?'current-password':'new-password'} required disabled={busy||exists===null}/></label>
+ {exists===false&&<><label>{t('Datuen gakoa errepikatu','Repite la clave de datos')}<input name="confirm" type="password" minLength={12} maxLength={256} autoComplete="new-password" required disabled={busy}/></label><p>{t('Gorde gakoa leku seguru batean. Sarbide-pasahitza berrezartzeak ez ditu datu hauek desblokeatzen. Aurreko liburutegia egiaztatu ondoren migratuko da; bideo eta GPX originalak ez dira aldatuko.','Guarda esta clave en un lugar seguro. Restablecer el acceso web no desbloquea estos datos. La biblioteca anterior se migrará y verificará; los vídeos y GPX originales no se modificarán.')}</p></>}
+ <p>{t('Segurtasunagatik, karpetak berriro aukeratu beharko dituzu saio berri bakoitzean. Beste erabiltzaileen datu zaharrak babesteko, bakoitzak bere kontua ireki eta migratu behar du.','Los originales GPX, vídeos y MP4 exportados siguen siendo archivos normales. Por seguridad, tendrás que volver a elegir las carpetas en cada nueva sesión. Para proteger los datos antiguos de otras cuentas, cada usuario debe abrir su cuenta y completar su migración.')}</p>
+ {exists===false&&<label className="vault-confirm"><input type="checkbox" required disabled={busy}/>{t('Beste fitxak itxi ditut eta datuen gakoa leku seguruan gordeko dut.','He cerrado las otras pestañas de la app y guardaré la clave de datos en un lugar seguro.')}</label>}
+ {error&&<p role="alert">{error}</p>}<button disabled={busy||exists===null}>{busy?t('Datuak prestatzen…','Preparando los datos…'):t('Desblokeatu','Desbloquear')}</button>
+ <button type="button" disabled={busy} onClick={async()=>{await fetch('/api/logout',{method:'POST',headers:{'Content-Type':'application/json'}});location.reload();}}>{t('Saioa itxi','Cerrar sesión')}</button>
+ </form></div></main>;
+}

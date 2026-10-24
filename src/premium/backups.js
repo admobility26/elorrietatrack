@@ -85,7 +85,7 @@ export async function restoreBackup(input,{update=false,desktop=window.elorrieta
  const merged=mergeBackupStorage(storage,backup.storage,update),records={sessions:mergeItems(sessions,backup.sessions,update),library:mergeItems(library,backup.library,update)};
  const resumeAutosave=suspendAutosave();
  let recordsWritten=false;
- try{writeStorage(merged);await replaceBackupRecords(records);recordsWritten=true;if(desktop)await desktop.saveLibrary(desktopSnapshot());}
- catch(error){resumeAutosave();let rollbackError;try{writeStorage(storage);}catch(e){rollbackError=e;}if(recordsWritten)try{await replaceBackupRecords({sessions,library});}catch(e){rollbackError=e;}if(desktop)try{await desktop.saveLibrary(desktopSnapshot());}catch(e){rollbackError=e;}throw Error(rollbackError?'No se pudo completar la restauración. No cierres la aplicación; conserva tu archivo de copia.':`No se pudo restaurar. Se han conservado los datos anteriores. ${error.message||''}`);}
+ try{writeStorage(merged);await replaceBackupRecords(records);recordsWritten=true;if(desktop)await desktop.saveLibrary(desktopSnapshot());await window.rutasVault?.flush();}
+ catch(error){resumeAutosave();let rollbackError;try{writeStorage(storage);}catch(e){rollbackError=e;}if(recordsWritten)try{await replaceBackupRecords({sessions,library});}catch(e){rollbackError=e;}if(desktop)try{await desktop.saveLibrary(desktopSnapshot());}catch(e){rollbackError=e;}try{await window.rutasVault?.flush();}catch(e){rollbackError=e;}throw Error(rollbackError?'No se pudo completar la restauración. No cierres la aplicación; conserva tu archivo de copia.':`No se pudo restaurar. Se han conservado los datos anteriores. ${error.message||''}`);}
  return backupSummary(backup);
 }

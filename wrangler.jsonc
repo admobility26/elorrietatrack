@@ -21,5 +21,10 @@
   "vars": {
     "PUBLIC_ORIGIN": "https://elorrietatrack.admobility26.workers.dev"
   },
-  "workers_dev": true
+  "workers_dev": true,
+  "triggers": {
+    "crons": [
+      "17 * * * *"
+    ]
+  }
 }
